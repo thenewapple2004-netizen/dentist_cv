@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body style="background:#f0f4f8; min-height:100vh; padding:2rem;">
+
+<div style="max-width:750px; margin:0 auto;">
+  <a href="/student" style="color:#1a6fb5; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem;">
+    ← Back to Dashboard
+  </a>
+
+  <div id="quiz-loader" style="text-align:center; padding:3rem;">
+    <div class="spinner" style="margin:0 auto;"></div>
+    <p class="text-muted mt-2">Loading quiz...</p>
+  </div>
+
+  <div id="quiz-container" style="display:none;" class="card">
+    <h2 id="quiz-title" style="margin-bottom:0.5rem;"></h2>
+    <div class="quiz-progress"><div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div></div>
+    <p class="text-muted" style="font-size:0.85rem;" id="quiz-counter"></p>
+
+    <h3 id="question-text" style="margin: 1rem 0 1.25rem;"></h3>
+    <div id="options-container"></div>
+
+    <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+      <button id="prev-btn" class="btn btn-outline" disabled>← Previous</button>
+      <button id="next-btn" class="btn btn-primary">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/quiz.js"></script>
+<script>
+  DentAI.requireAuth();
+  const quizId = {{ quiz_id }};
+
+  async function loadAndStart() {
+    try {
+      const data = await DentAI.apiFetch(`/api/quiz/${quizId}`);
+      Quiz.loadQuiz(data);
+    } catch(e) {
+      document.getElementById("quiz-loader").innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
+    }
+  }
+
+  Quiz.init();
+  loadAndStart();
+</script>
+</body>
+</html>

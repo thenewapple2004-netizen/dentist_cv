@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DentAI - Oral Pathology Education</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="landing">
+  <nav class="landing-nav">
+    <div class="logo">🦷 DentAI</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="/login">Login</a>
+      <a href="/register" class="btn btn-secondary btn-sm">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="landing-hero">
+    <h1>Interactive Education in<br>Odontogenic Oral Pathology</h1>
+    <p>AI-powered platform for dental students and faculty. Learn, diagnose, and master oral pathology through intelligent quizzes, AR visualization, and real-time AI tutoring.</p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <a href="/register" class="btn btn-secondary btn-lg">Start Learning Free</a>
+      <a href="/login" class="btn btn-outline btn-lg" style="color:white; border-color:rgba(255,255,255,0.5);">Sign In</a>
+    </div>
+  </section>
+
+  <section id="features" class="landing-features">
+    <div class="feature-card">
+      <div class="icon">🤖</div>
+      <h3>AI Chatbot Tutor</h3>
+      <p>Ask questions about oral pathology and get instant, accurate answers powered by Claude AI.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📊</div>
+      <h3>Smart Quiz Generation</h3>
+      <p>Upload course PDFs and automatically generate custom MCQ quizzes with detailed explanations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔬</div>
+      <h3>CV-Based Diagnosis</h3>
+      <p>Upload dental images for AI-powered oral pathology condition analysis and recommendations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🥽</div>
+      <h3>AR 3D Visualization</h3>
+      <p>Explore dental anatomy and pathological conditions through augmented reality models.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📈</div>
+      <h3>Performance Reports</h3>
+      <p>Faculty get detailed analytics on student performance, quiz scores, and learning progress.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📌</div>
+      <h3>Notes & Bookmarks</h3>
+      <p>Save important topics, add personal notes, and build your own study library.</p>
+    </div>
+  </section>
+
+  <div style="text-align:center; padding: 3rem; opacity:0.6; font-size:0.85rem;">
+    © 2025 DentAI — Bahria University, Lahore Campus | Computer Vision Assignment
+  </div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+  // If already logged in, redirect to dashboard
+  const user = DentAI.getUser();
+  if (user) {
+    window.location.href = user.role === "faculty" ? "/faculty" : "/student";
+  }
+</script>
+</body>
+</html>

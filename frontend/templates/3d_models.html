@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Dental Models — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    body { margin: 0; background: #0d1117; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
+    .viewer-shell {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── Left Panel: Model List ────────────────────────── */
+    .model-panel {
+      width: 230px;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .panel-header {
+      padding: 1rem;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .panel-header a {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .panel-header h3 { color: #e6edf3; font-size: 0.95rem; margin: 0; }
+
+    .model-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .model-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 3px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .model-card:hover { background: #21262d; border-color: #30363d; }
+
+    .model-card.active {
+      background: #0d419d22;
+      border-color: #1f6feb;
+    }
+
+    .model-icon {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .model-card-info { flex: 1; min-width: 0; }
+    .model-card-name { color: #e6edf3; font-size: 0.85rem; font-weight: 600; }
+    .model-card-sub  { color: #8b949e; font-size: 0.72rem; margin-top: 1px; }
+
+    /* ── Center: 3D Canvas ─────────────────────────────── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(ellipse at center, #1a2030 0%, #0d1117 100%);
+    }
+
+    #three-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .canvas-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+      z-index: 10;
+    }
+
+    .model-title-display { color: #e6edf3; font-size: 1.1rem; font-weight: 700; }
+    .model-badge {
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+
+    .canvas-controls {
+      position: absolute;
+      bottom: 1rem; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .ctrl-btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.5);
+      color: rgba(255,255,255,0.8);
+      font-size: 0.78rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .ctrl-btn.active { background: #1f6feb; border-color: #388bfd; color: #fff; }
+
+    .hint-bar {
+      position: absolute;
+      bottom: 3.5rem; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.3);
+      font-size: 0.72rem;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* ── Right Panel: Info ─────────────────────────────── */
+    .info-panel {
+      width: 300px;
+      background: #161b22;
+      border-left: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .info-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .info-model-name {
+      color: #e6edf3;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .info-model-sub {
+      color: #8b949e;
+      font-size: 0.8rem;
+    }
+
+    .info-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.25rem;
+    }
+
+    .info-section { margin-bottom: 1.25rem; }
+
+    .info-section-title {
+      color: #58a6ff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.6rem;
+    }
+
+    .info-section p {
+      color: #c9d1d9;
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+
+    .anatomy-legend { list-style: none; padding: 0; margin: 0; }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #21262d;
+      font-size: 0.82rem;
+      color: #c9d1d9;
+    }
+
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .severity-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .severity-none    { background: #1a3b2a; color: #3fb950; }
+    .severity-low     { background: #2d2a1a; color: #d29922; }
+    .severity-high    { background: #3b1a1a; color: #f85149; }
+    .severity-urgent  { background: #4a1a1a; color: #ff6b6b; }
+
+    .layer-bar {
+      height: 8px;
+      border-radius: 4px;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+    /* ── Gallery strip ───────────────────────────────── */
+    .gallery-strip {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 0; overflow: hidden;
+      background: rgba(9,12,18,0.97);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid #30363d;
+      transition: height 0.28s cubic-bezier(.4,0,.2,1);
+      display: flex; align-items: center;
+      overflow-x: auto; gap: 10px;
+      padding: 0 1rem; z-index: 20;
+    }
+    .gallery-strip.open { height: 152px; }
+    .gallery-strip::-webkit-scrollbar { height: 3px; }
+    .gallery-strip::-webkit-scrollbar-thumb { background: #30363d; }
+
+    .gal-thumb {
+      flex-shrink: 0; width: 86px; height: 132px;
+      border-radius: 8px; overflow: hidden;
+      cursor: pointer; border: 2px solid #30363d;
+      transition: all 0.2s; background: #161b22;
+      display: flex; flex-direction: column;
+    }
+    .gal-thumb:hover { border-color: #388bfd; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(56,139,253,0.25); }
+    .gal-thumb.sel   { border-color: #1f6feb; }
+    .gal-thumb canvas { flex-shrink: 0; }
+    .gal-label { font-size: 0.6rem; color: #8b949e; text-align: center; padding: 3px 2px; line-height: 1.3; flex: 1; display: flex; align-items: center; justify-content: center; }
+
+    /* ── Fullscreen diagram modal ─────────────────── */
+    .diag-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.93); z-index: 300;
+      align-items: center; justify-content: center;
+    }
+    .diag-modal.open { display: flex; }
+    .diag-modal-box  {
+      background: #fff; border-radius: 16px;
+      padding: 1.25rem; max-width: 520px; width: 90vw;
+      position: relative; box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+    .diag-close { position: absolute; top: 0.75rem; right: 1rem; font-size: 1.6rem; cursor: pointer; color: #888; line-height: 1; }
+    .diag-close:hover { color: #333; }
+    .diag-modal-title { font-size: 0.95rem; font-weight: 700; color: #222; margin-bottom: 0.75rem; }
+    .diag-modal-canvas { display: block; width: 100% !important; height: auto !important; border-radius: 8px; }
+
+    /* ── Ref image in info panel ─────────────────── */
+    .ref-img-section { cursor: pointer; }
+    .ref-img-section canvas { display: block; width: 100%; height: auto; border-radius: 6px; }
+    .ref-img-section:hover canvas { opacity: 0.88; }
+
+    @media (max-width: 900px) {
+      .info-panel { display: none; }
+      .model-panel { width: 180px; }
+    }
+
+    @media (max-width: 600px) {
+      .model-panel { width: 60px; }
+      .model-card-info { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="viewer-shell">
+
+  <!-- Left: Model List -->
+  <div class="model-panel">
+    <div class="panel-header">
+      <a href="javascript:history.back()">← Back</a>
+      <h3>3D Models</h3>
+    </div>
+    <div class="model-list" id="model-list"></div>
+  </div>
+
+  <!-- Center: 3D Viewer -->
+  <div class="canvas-wrap">
+    <div class="canvas-topbar">
+      <div>
+        <span class="model-title-display" id="current-title">Select a Model</span>
+        <span class="model-badge" id="current-badge" style="display:none"></span>
+      </div>
+      <div style="color:rgba(255,255,255,0.4); font-size:0.78rem;">🦷 DentAI 3D Viewer</div>
+    </div>
+
+    <canvas id="three-canvas"></canvas>
+
+    <div class="hint-bar">🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</div>
+
+    <div class="canvas-controls">
+      <button class="ctrl-btn" onclick="resetView()">⟳ Reset</button>
+      <button class="ctrl-btn" id="wireframe-btn" onclick="toggleWireframe()">⬡ Wireframe</button>
+      <button class="ctrl-btn active" id="rotate-btn" onclick="toggleAutoRotate()">↻ Auto-Rotate</button>
+      <button class="ctrl-btn" id="explode-btn" onclick="toggleExplode()">💥 Explode</button>
+      <button class="ctrl-btn" onclick="takeScreenshot()">📷 Screenshot</button>
+      <button class="ctrl-btn" id="gallery-btn" onclick="toggleGallery()">🖼 Diagrams</button>
+    </div>
+
+    <div class="gallery-strip" id="gallery-strip"></div>
+  </div>
+
+  <!-- Fullscreen diagram modal -->
+  <div class="diag-modal" id="diag-modal" onclick="closeDiagModal()">
+    <div class="diag-modal-box" onclick="event.stopPropagation()">
+      <span class="diag-close" onclick="closeDiagModal()">×</span>
+      <div class="diag-modal-title" id="modal-title"></div>
+      <canvas class="diag-modal-canvas" id="modal-canvas" width="480" height="560"></canvas>
+    </div>
+  </div>
+
+  <!-- Right: Info Panel -->
+  <div class="info-panel">
+    <div class="info-header">
+      <div class="info-model-name" id="info-title">Select a model</div>
+      <div class="info-model-sub" id="info-sub">Click any model from the list</div>
+    </div>
+    <div class="info-body" id="info-body">
+      <div class="info-section">
+        <div class="info-section-title">How to Navigate</div>
+        <ul style="color:#8b949e; font-size:0.82rem; padding-left:1.25rem; line-height:2;">
+          <li>Left-click + drag → Rotate</li>
+          <li>Right-click + drag → Pan</li>
+          <li>Scroll wheel → Zoom</li>
+          <li>Double-click → Focus</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>DentAI.requireAuth();</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Scene Setup ──────────────────────────────────────────────────────────────
+const canvas = document.getElementById('three-canvas');
+const wrap   = canvas.parentElement;
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const scene  = new THREE.Scene();
+scene.fog    = new THREE.FogExp2(0x0d1117, 0.04);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+camera.position.set(0, 2, 8);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 1.2;
+controls.minDistance = 2;
+controls.maxDistance = 25;
+controls.target.set(0, 1, 0);
+
+// ── Lighting ─────────────────────────────────────────────────────────────────
+const hemi = new THREE.HemisphereLight(0xddeeff, 0x221111, 0.5);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(6, 10, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far  = 50;
+sun.shadow.camera.left = sun.shadow.camera.bottom = -8;
+sun.shadow.camera.right = sun.shadow.camera.top = 8;
+scene.add(sun);
+
+const fill = new THREE.PointLight(0x4488ff, 0.6, 30);
+fill.position.set(-6, 4, -4);
+scene.add(fill);
+
+const rim = new THREE.PointLight(0x88ccff, 0.3, 20);
+rim.position.set(0, -3, -6);
+scene.add(rim);
+
+// ── Ground Plane ─────────────────────────────────────────────────────────────
+const groundMat = new THREE.ShadowMaterial({ opacity: 0.25 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.1;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grid lines
+const grid = new THREE.GridHelper(20, 20, 0x1f6feb20, 0x1f6feb10);
+grid.position.y = -0.09;
+scene.add(grid);
+
+// ── Material Factory ─────────────────────────────────────────────────────────
+function mat(color, opts = {}) {
+  return new THREE.MeshPhongMaterial({
+    color, shininess: opts.shininess ?? 60,
+    transparent: opts.transparent ?? false,
+    opacity: opts.opacity ?? 1,
+    side: opts.side ?? THREE.FrontSide,
+    ...opts,
+  });
+}
+
+// ── Tooth Profile Builder (LatheGeometry) ─────────────────────────────────────
+function makeLathePts(pts) {
+  return pts.map(([r, y]) => new THREE.Vector2(r, y));
+}
+
+// Shared root profile (apex to cervix)
+const rootProfile = makeLathePts([
+  [0,    0   ], [0.07, 0.06], [0.16, 0.25],
+  [0.24, 0.7 ], [0.27, 1.3 ], [0.25, 1.75],
+  [0.22, 1.95],
+]);
+
+// Crown profile (cervix to occlusal)
+const crownProfile = makeLathePts([
+  [0.22, 1.95], [0.42, 2.1 ], [0.58, 2.5 ],
+  [0.62, 2.9 ], [0.57, 3.2 ], [0.44, 3.4 ],
+  [0.26, 3.5 ], [0,    3.52],
+]);
+
+function buildTooth(rootColor = 0xd4af7a, crownColor = 0xf7f3ea, segments = 32) {
+  const g = new THREE.Group();
+  const rm = new THREE.Mesh(new THREE.LatheGeometry(rootProfile, segments), mat(rootColor, { shininess: 20 }));
+  rm.castShadow = true;
+  const cm = new THREE.Mesh(new THREE.LatheGeometry(crownProfile, segments), mat(crownColor, { shininess: 140 }));
+  cm.castShadow = true;
+  g.add(rm, cm);
+  return g;
+}
+
+// ── Anatomy Cross-Section ─────────────────────────────────────────────────────
+function buildCrossSection() {
+  const g = new THREE.Group();
+  const half = Math.PI;
+
+  // Enamel (outermost — off-white)
+  const enamelPts = [...rootProfile.slice(0, -1),
+    makeLathePts([[0.22,1.95]])[0],
+    ...crownProfile];
+  const enamelOuter = new THREE.LatheGeometry(enamelPts, 32, 0, half * 2);
+  const enamelHalf  = new THREE.LatheGeometry(crownProfile, 48, 0, half);
+  const enamelMat   = mat(0xf0ede5, { shininess: 160, side: THREE.DoubleSide });
+  g.add(new THREE.Mesh(enamelOuter, enamelMat));
+
+  // Dentin shell (cream) — slightly smaller
+  const dentinPts = makeLathePts([
+    [0,0],[0.06,0.06],[0.13,0.25],[0.2,0.7],[0.22,1.3],[0.2,1.75],[0.18,1.95],
+    [0.36,2.1],[0.5,2.5],[0.54,2.9],[0.49,3.2],[0.37,3.4],[0.2,3.5],[0,3.52],
+  ]);
+  const dentinHalf = new THREE.LatheGeometry(dentinPts, 48, 0, half);
+  const dentinMat  = mat(0xd4a853, { shininess: 40, transparent: true, opacity: 0.9, side: THREE.DoubleSide });
+  g.add(new THREE.Mesh(dentinHalf, dentinMat));
+
+  // Pulp (red/pink — innermost)
+  const pulpPts = makeLathePts([
+    [0,0],[0.04,0.1],[0.08,0.4],[0.1,0.9],[0.1,1.4],[0.07,1.8],[0.05,1.95],
+    [0.18,2.1],[0.25,2.5],[0.26,2.9],[0.2,3.2],[0.12,3.4],[0,3.5],
+  ]);
+  const pulpHalf = new THREE.LatheGeometry(pulpPts, 48, 0, half);
+  const pulpMat  = mat(0xd63c3c, { shininess: 20, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
+  g.add(new THREE.Mesh(pulpHalf, pulpMat));
+
+  // Cementum (thin brown on root)
+  const cemPts = makeLathePts([
+    [0,0],[0.07,0.06],[0.17,0.25],[0.25,0.7],[0.28,1.3],[0.26,1.75],[0.24,1.95],
+  ]);
+  const cemHalf = new THREE.LatheGeometry(cemPts, 32, 0, half);
+  const cemMat  = mat(0x8b5e3c, { shininess: 10, side: THREE.DoubleSide, transparent: true, opacity: 0.75 });
+  g.add(new THREE.Mesh(cemHalf, cemMat));
+
+  // PDL space indicator (thin translucent ring around root)
+  const pdlPts = makeLathePts([
+    [0.28,0.1],[0.3,0.5],[0.31,1.0],[0.3,1.4],[0.28,1.8],
+  ]);
+  const pdlHalf = new THREE.LatheGeometry(pdlPts, 32, 0, half);
+  const pdlMat  = mat(0xffaaaa, { shininess: 5, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+  g.add(new THREE.Mesh(pdlHalf, pdlMat));
+
+  return g;
+}
+
+// ── Dental Arch (Full Jaw) ────────────────────────────────────────────────────
+function buildJaw() {
+  const g = new THREE.Group();
+
+  // Jaw bone arch (U-shaped torus slice)
+  const archCurvePoints = [];
+  for (let i = 0; i <= 32; i++) {
+    const t = i / 32;
+    const a = t * Math.PI;
+    archCurvePoints.push(new THREE.Vector3(
+      Math.sin(a) * 3.8,
+      0,
+      -Math.cos(a) * 2.2 + 1
+    ));
+  }
+  const archCurve = new THREE.CatmullRomCurve3(archCurvePoints);
+  const archTube  = new THREE.TubeGeometry(archCurve, 64, 0.55, 10, false);
+  const boneMat   = mat(0xe8d5b0, { shininess: 15 });
+  const archMesh  = new THREE.Mesh(archTube, boneMat);
+  archMesh.castShadow = true;
+  g.add(archMesh);
+
+  // Gum tissue
+  const gumTube = new THREE.TubeGeometry(archCurve, 64, 0.62, 10, false);
+  const gumMat  = mat(0xf08080, { transparent: true, opacity: 0.55, shininess: 30 });
+  g.add(new THREE.Mesh(gumTube, gumMat));
+
+  // Place teeth along arch
+  const teethData = [
+    // [t (0-1), scale, type]
+    [0.08, 0.65, 'incisor'], [0.17, 0.6, 'incisor'],
+    [0.28, 0.72, 'canine'],  [0.39, 0.75, 'premolar'],
+    [0.61, 0.75, 'premolar'], [0.72, 0.72, 'canine'],
+    [0.83, 0.6, 'incisor'],  [0.92, 0.65, 'incisor'],
+  ];
+
+  teethData.forEach(([t, scale, type]) => {
+    const a = t * Math.PI;
+    const x = Math.sin(a) * 3.8;
+    const z = -Math.cos(a) * 2.2 + 1;
+    const tooth = buildTooth(0xd4af7a, type === 'canine' ? 0xf0ece2 : 0xf7f3ea, 24);
+    tooth.scale.setScalar(scale * 0.7);
+    tooth.position.set(x, 0.55, z);
+    tooth.lookAt(new THREE.Vector3(0, tooth.position.y, 1));
+    tooth.rotateX(-Math.PI / 12);
+    g.add(tooth);
+  });
+
+  g.position.y = -1.0;
+  return g;
+}
+
+// ── Dental Caries ─────────────────────────────────────────────────────────────
+function buildCaries() {
+  const g = new THREE.Group();
+  const tooth = buildTooth();
+  g.add(tooth);
+
+  // Stage 1: white spot (subsurface)
+  const spot1 = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 16, 16),
+    mat(0xffffff, { transparent: true, opacity: 0.6, shininess: 200 })
+  );
+  spot1.position.set(0.52, 2.85, 0);
+  g.add(spot1);
+
+  // Stage 2: brown cavity
+  const cavity = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 16, 16),
+    mat(0x5c3317, { shininess: 5 })
+  );
+  cavity.position.set(0.45, 3.1, 0);
+  g.add(cavity);
+
+  // Stage 3: deep caries into dentin (dark, larger)
+  const deep = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 16, 16),
+    mat(0x2a1505, { shininess: 2 })
+  );
+  deep.position.set(0.38, 3.25, 0);
+  g.add(deep);
+
+  // Demineralization ring
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.28, 0.04, 8, 24),
+    mat(0xd4a853, { transparent: true, opacity: 0.5 })
+  );
+  ring.position.set(0.4, 3.0, 0);
+  ring.rotation.y = Math.PI / 4;
+  g.add(ring);
+
+  // Stage labels (floating spheres as indicators)
+  const colors = [0xffdd44, 0xd4752a, 0x8b3000];
+  colors.forEach((c, i) => {
+    const ind = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 12, 12),
+      mat(c, { shininess: 50 })
+    );
+    ind.position.set(1.2, 2.7 + i * 0.35, 0);
+    g.add(ind);
+  });
+
+  return g;
+}
+
+// ── Periodontitis ─────────────────────────────────────────────────────────────
+function buildPeriodontitis() {
+  const g = new THREE.Group();
+
+  // Tooth (root exposed — offset downward relative to bone)
+  const tooth = buildTooth();
+  tooth.position.y = -0.6; // root more exposed
+  g.add(tooth);
+
+  // Alveolar bone at reduced level (bone loss)
+  const bone = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.85, 0.95, 1.0, 24),
+    mat(0xd4c19a, { shininess: 10 })
+  );
+  bone.position.y = 0.3;
+  bone.castShadow = true;
+  g.add(bone);
+
+  // Old bone level (ghost) — where it should be
+  const oldBone = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.9, 1.0, 0.4, 24),
+    mat(0xd4c19a, { transparent: true, opacity: 0.25, shininess: 5 })
+  );
+  oldBone.position.y = 1.05;
+  g.add(oldBone);
+
+  // Inflamed gum tissue (red, around root)
+  const gum = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.55, 0.8, 24),
+    mat(0xc43c3c, { transparent: true, opacity: 0.55, shininess: 30 })
+  );
+  gum.position.y = 0.9;
+  g.add(gum);
+
+  // Pocket depth indicator (red ring)
+  const pocket = new THREE.Mesh(
+    new THREE.TorusGeometry(0.42, 0.05, 6, 24),
+    mat(0xff2244, { shininess: 40 })
+  );
+  pocket.position.y = 0.5;
+  pocket.rotation.x = Math.PI / 2;
+  g.add(pocket);
+
+  // Calculus (tartar buildup) deposits
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2;
+    const calc = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 8, 8),
+      mat(0xb8a470, { shininess: 60 })
+    );
+    calc.position.set(
+      Math.cos(angle) * 0.3,
+      0.2 + i * 0.15,
+      Math.sin(angle) * 0.3
+    );
+    g.add(calc);
+  }
+
+  // Bone level arrow (blue indicator)
+  const arrowGeo = new THREE.ConeGeometry(0.08, 0.3, 8);
+  const arrow = new THREE.Mesh(arrowGeo, mat(0x3399ff, { shininess: 80 }));
+  arrow.position.set(1.1, 0.8, 0);
+  arrow.rotation.z = -Math.PI / 2;
+  g.add(arrow);
+
+  return g;
+}
+
+// ── Periapical Abscess ────────────────────────────────────────────────────────
+function buildAbscess() {
+  const g = new THREE.Group();
+
+  // Tooth
+  const tooth = buildTooth();
+  g.add(tooth);
+
+  // Abscess sac (outer — yellow translucent)
+  const absOuter = new THREE.Mesh(
+    new THREE.SphereGeometry(0.7, 24, 24),
+    mat(0xffd700, { transparent: true, opacity: 0.35, shininess: 80 })
+  );
+  absOuter.position.y = -0.6;
+  g.add(absOuter);
+
+  // Abscess inner (dense pus core)
+  const absInner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 20, 20),
+    mat(0xff9900, { transparent: true, opacity: 0.75, shininess: 30 })
+  );
+  absInner.position.y = -0.6;
+  g.add(absInner);
+
+  // Pus center
+  const absPus = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 16, 16),
+    mat(0xcc6600, { shininess: 10 })
+  );
+  absPus.position.y = -0.55;
+  g.add(absPus);
+
+  // Glow rings (pulsing via animation)
+  for (let i = 1; i <= 3; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7 + i * 0.15, 0.03, 6, 32),
+      mat(0xffcc00, { transparent: true, opacity: 0.15 / i, shininess: 100 })
+    );
+    ring.position.y = -0.6;
+    ring.rotation.x = Math.PI / 2;
+    ring.userData.glowRing = i;
+    g.add(ring);
+  }
+
+  // Periapical bone destruction (dark pit)
+  const boneGap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 20, 20),
+    mat(0x1a0a00, { transparent: true, opacity: 0.6 })
+  );
+  boneGap.position.y = -0.8;
+  g.add(boneGap);
+
+  // Surrounding bone
+  const bone = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.1, 1.2, 1.5, 24),
+    mat(0xd4c19a, { transparent: true, opacity: 0.45, shininess: 10 })
+  );
+  bone.position.y = 0.6;
+  g.add(bone);
+
+  return g;
+}
+
+// ── Dental Implant ────────────────────────────────────────────────────────────
+function buildImplant() {
+  const g = new THREE.Group();
+
+  // Bone block
+  const bone = new THREE.Mesh(
+    new THREE.BoxGeometry(2.4, 2.0, 2.4),
+    mat(0xe0ceaa, { shininess: 8 })
+  );
+  bone.position.y = -0.6;
+  bone.castShadow = true;
+  g.add(bone);
+
+  // Bone marrow (cancellous) — slightly darker inside
+  const marrow = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 1.4, 1.8),
+    mat(0xd4a870, { transparent: true, opacity: 0.7, shininess: 5 })
+  );
+  marrow.position.y = -0.6;
+  g.add(marrow);
+
+  // Implant fixture (titanium screw)
+  const fixtureMat = mat(0x8ab0c8, { shininess: 200, specular: 0xaaccff });
+  const fixture = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.18, 2.2, 20),
+    fixtureMat
+  );
+  fixture.position.y = -0.55;
+  fixture.castShadow = true;
+  g.add(fixture);
+
+  // Screw threads
+  for (let i = 0; i < 12; i++) {
+    const thread = new THREE.Mesh(
+      new THREE.TorusGeometry(0.28, 0.04, 5, 20),
+      fixtureMat
+    );
+    thread.rotation.x = Math.PI / 2;
+    thread.position.y = -1.5 + i * 0.15;
+    g.add(thread);
+  }
+
+  // Abutment (connector, slightly wider at bottom)
+  const abutMat = mat(0x9bbfd4, { shininess: 160 });
+  const abut = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.28, 0.7, 16),
+    abutMat
+  );
+  abut.position.y = 0.7;
+  abut.castShadow = true;
+  g.add(abut);
+
+  // Crown (prosthetic tooth)
+  const crownMat = mat(0xfaf7ef, { shininess: 180, specular: 0xffffff });
+  const crownBody = new THREE.Mesh(
+    new THREE.LatheGeometry(makeLathePts([
+      [0.22,0],[0.5,0.3],[0.6,0.75],[0.55,1.15],[0.42,1.4],[0.2,1.5],[0,1.52]
+    ]), 32),
+    crownMat
+  );
+  crownBody.position.y = 1.05;
+  crownBody.castShadow = true;
+  g.add(crownBody);
+
+  // Crown cusps
+  [[0.22,2.6,0.22],[-0.22,2.6,0.22],[0.22,2.6,-0.22],[-0.22,2.6,-0.22]].forEach(([x,y,z]) => {
+    g.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(0.17,12,12), crownMat), { position: new THREE.Vector3(x,y,z) }));
+  });
+
+  // Hex anti-rotation feature (at top of fixture)
+  const hex = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, 0.15, 6),
+    mat(0x6090b0, { shininess: 220 })
+  );
+  hex.position.y = 0.35;
+  g.add(hex);
+
+  g.position.y = -0.4;
+  return g;
+}
+
+// ── Root Canal Treatment ──────────────────────────────────────────────────────
+function buildRootCanal() {
+  const g = new THREE.Group();
+
+  // Outer tooth half (transparent) using half-revolution
+  const outerPts = [...rootProfile, ...crownProfile.slice(1)];
+  const toothHalf = new THREE.Mesh(
+    new THREE.LatheGeometry(outerPts, 48, 0, Math.PI),
+    mat(0xf0ede5, { transparent: true, opacity: 0.45, side: THREE.DoubleSide, shininess: 120 })
+  );
+  g.add(toothHalf);
+
+  // Full outer shell (back side)
+  const toothFull = new THREE.Mesh(
+    new THREE.LatheGeometry(outerPts, 48, Math.PI, Math.PI),
+    mat(0xf0ede5, { shininess: 120, side: THREE.DoubleSide })
+  );
+  g.add(toothFull);
+
+  // Dentin layer (half)
+  const dentinPts = makeLathePts([
+    [0,0],[0.05,0.06],[0.13,0.25],[0.2,0.7],[0.22,1.3],[0.2,1.9],
+    [0.36,2.1],[0.52,2.5],[0.55,2.9],[0.5,3.2],[0.38,3.4],[0.2,3.5],[0,3.52],
+  ]);
+  g.add(new THREE.Mesh(
+    new THREE.LatheGeometry(dentinPts, 48, 0, Math.PI),
+    mat(0xcfa050, { transparent: true, opacity: 0.6, side: THREE.DoubleSide, shininess: 20 })
+  ));
+
+  // Root canal (filled with gutta-percha — pink/red)
+  const canalPts = makeLathePts([
+    [0,0],[0.04,0.1],[0.07,0.5],[0.07,1.0],[0.05,1.5],[0.04,1.9],
+    [0.12,2.1],[0.18,2.5],[0.18,2.9],[0.13,3.2],[0.07,3.4],[0,3.52],
+  ]);
+  g.add(new THREE.Mesh(
+    new THREE.LatheGeometry(canalPts, 32, 0, Math.PI * 2),
+    mat(0xe05858, { shininess: 15 })
+  ));
+
+  // Gutta-percha filling (slightly different shade, compressed)
+  const gpPts = makeLathePts([
+    [0,0.02],[0.035,0.12],[0.065,0.55],[0.065,1.05],[0.044,1.55],[0.035,1.9],
+    [0.1,2.1],[0.16,2.5],[0.16,2.9],[0.11,3.2],[0.06,3.4],[0,3.5],
+  ]);
+  g.add(new THREE.Mesh(
+    new THREE.LatheGeometry(gpPts, 24, 0, Math.PI * 2),
+    mat(0xd44040, { shininess: 10 })
+  ));
+
+  // Access cavity (opening on crown)
+  const accGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.35, 16);
+  const acc = new THREE.Mesh(accGeo, mat(0x222222, { shininess: 5 }));
+  acc.position.set(0, 3.35, 0);
+  g.add(acc);
+
+  // Composite restoration on top
+  const restore = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.2, 0.12, 16),
+    mat(0xe8d5a8, { shininess: 80 })
+  );
+  restore.position.y = 3.55;
+  g.add(restore);
+
+  return g;
+}
+
+// ── Incisor Tooth ─────────────────────────────────────────────────────────────
+function buildIncisor() {
+  const g = new THREE.Group();
+
+  // Root
+  const incRootPts = makeLathePts([
+    [0,0],[0.06,0.06],[0.14,0.3],[0.19,0.8],[0.2,1.4],[0.18,1.9],[0.15,2.0],
+  ]);
+  g.add(new THREE.Mesh(new THREE.LatheGeometry(incRootPts, 32), mat(0xd4b87a, { shininess: 20 })));
+
+  // Crown — blade-shaped
+  const incCrownPts = makeLathePts([
+    [0.15,2.0],[0.38,2.15],[0.48,2.5],[0.5,2.9],[0.44,3.2],[0.3,3.4],[0,3.45],
+  ]);
+  g.add(new THREE.Mesh(new THREE.LatheGeometry(incCrownPts, 48), mat(0xf8f5ee, { shininess: 160 })));
+
+  // Mamelons (3 bumps on incisal edge)
+  [-0.2, 0, 0.2].forEach(x => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 12), mat(0xf5f2ea, { shininess: 120 }));
+    m.position.set(x, 3.45, 0);
+    g.add(m);
+  });
+
+  return g;
+}
+
+// ── Canine Tooth ──────────────────────────────────────────────────────────────
+function buildCanine() {
+  const g = new THREE.Group();
+
+  // Long root
+  const canRootPts = makeLathePts([
+    [0,0],[0.07,0.07],[0.17,0.3],[0.25,0.9],[0.27,1.7],[0.24,2.3],[0.2,2.5],
+  ]);
+  g.add(new THREE.Mesh(new THREE.LatheGeometry(canRootPts, 32), mat(0xd4b47a, { shininess: 18 })));
+
+  // Pointed crown
+  const canCrownPts = makeLathePts([
+    [0.2,2.5],[0.45,2.7],[0.56,3.1],[0.54,3.5],[0.42,3.8],[0.2,4.0],[0,4.1],
+  ]);
+  g.add(new THREE.Mesh(new THREE.LatheGeometry(canCrownPts, 40), mat(0xf5f0e5, { shininess: 140 })));
+
+  // Single cusp tip
+  const cusp = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), mat(0xf3ede0, { shininess: 160 }));
+  cusp.position.y = 4.05;
+  g.add(cusp);
+
+  return g;
+}
+
+// ── Model Registry ────────────────────────────────────────────────────────────
+const MODELS = [
+  {
+    id: 'molar',
+    icon: '🦷', name: 'Molar Tooth',
+    sub: 'Full anatomy',
+    badge: 'ANATOMY', badgeColor: '#1f6feb',
+    camPos: [0, 2.5, 7],
+    create: buildTooth,
+    info: {
+      title: '🦷 Molar Tooth — Full 3D Model',
+      sub: 'First & second mandibular molars',
+      description: 'The molar is the largest and most posterior tooth. Mandibular molars typically have two roots (mesial and distal) supporting a broad crown with four cusps (MB, ML, DB, DL) and a central fossa.',
+      legend: [
+        { color: '#f7f3ea', label: 'Enamel — 96% hydroxyapatite, hardest tissue' },
+        { color: '#d4af7a', label: 'Root — dentin covered by cementum' },
+      ],
+      facts: [
+        { label: 'Crown height', value: '~7.5 mm' },
+        { label: 'Root length', value: '14–15 mm' },
+        { label: 'Cusps', value: '4 (MB, ML, DB, DL)' },
+        { label: 'Eruption', value: '6–7 years (1st)' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'cross-section',
+    icon: '🔍', name: 'Tooth Anatomy',
+    sub: 'Cross-section layers',
+    badge: 'LAYERS', badgeColor: '#388bfd',
+    camPos: [3.5, 2.5, 5.5],
+    create: buildCrossSection,
+    info: {
+      title: '🔍 Tooth Anatomy — Cross-Section',
+      sub: 'Histological layers from outside in',
+      description: 'A cross-sectional view revealing the layered structure of a tooth. Each layer has distinct histological composition and clinical significance.',
+      legend: [
+        { color: '#f0ede5', label: 'Enamel — 96% mineral, no cells' },
+        { color: '#d4a853', label: 'Dentin — 70% mineral, dentinal tubules' },
+        { color: '#d63c3c', label: 'Pulp — vascular connective tissue' },
+        { color: '#8b5e3c', label: 'Cementum — covers root, anchors PDL' },
+        { color: '#ffaaaa', label: 'PDL — periodontal ligament space' },
+      ],
+      facts: [
+        { label: 'Enamel thickness', value: '1.5–2.5 mm' },
+        { label: 'Dentin tubules', value: '~45,000/mm²' },
+        { label: 'Pulp volume', value: '~0.02 cm³' },
+        { label: 'PDL width', value: '0.15–0.38 mm' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'incisor',
+    icon: '🫦', name: 'Incisor Tooth',
+    sub: 'Anterior tooth',
+    badge: 'ANATOMY', badgeColor: '#1f6feb',
+    camPos: [0, 2.5, 7],
+    create: buildIncisor,
+    info: {
+      title: '🫦 Central Incisor',
+      sub: 'Upper central incisor (tooth #11)',
+      description: 'The central incisor is the most anterior tooth with a flat, blade-like crown for cutting food. It has a single root and three mamelons on the incisal edge in newly erupted teeth.',
+      legend: [
+        { color: '#f8f5ee', label: 'Crown — wide, labiolingually flat' },
+        { color: '#d4b87a', label: 'Root — single, straight, longest in anteriors' },
+      ],
+      facts: [
+        { label: 'Crown width', value: '~8.5 mm' },
+        { label: 'Root length', value: '~13 mm' },
+        { label: 'Function', value: 'Cutting (incising)' },
+        { label: 'Mamelons', value: '3 (worn with age)' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'canine',
+    icon: '🐺', name: 'Canine Tooth',
+    sub: 'Longest tooth in arch',
+    badge: 'ANATOMY', badgeColor: '#1f6feb',
+    camPos: [0, 3, 8],
+    create: buildCanine,
+    info: {
+      title: '🐺 Canine (Cuspid)',
+      sub: 'Upper/lower canine — keystone of arch',
+      description: 'The canine has the longest root of all teeth and a single prominent cusp. It provides canine guidance in lateral excursion and is the cornerstone of arch stability.',
+      legend: [
+        { color: '#f5f0e5', label: 'Crown — single cusp, robust' },
+        { color: '#d4b47a', label: 'Root — longest root, 16–17 mm' },
+      ],
+      facts: [
+        { label: 'Root length', value: '~16.5 mm (longest)' },
+        { label: 'Cusps', value: '1 (single cusp tip)' },
+        { label: 'Function', value: 'Tearing + canine guidance' },
+        { label: 'Eruption', value: '11–12 years (upper)' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'jaw',
+    icon: '🦴', name: 'Dental Arch (Jaw)',
+    sub: 'Full arch arrangement',
+    badge: 'ARCH', badgeColor: '#6e40c9',
+    camPos: [0, 6, 10],
+    create: buildJaw,
+    info: {
+      title: '🦴 Dental Arch — Upper Jaw',
+      sub: 'Maxillary arch with 8 anterior teeth',
+      description: 'The maxillary dental arch follows a parabolic curvature. The arrangement from center outward: central incisors → lateral incisors → canines → premolars → molars. The arch is embedded in the alveolar bone of the maxilla.',
+      legend: [
+        { color: '#e8d5b0', label: 'Alveolar bone — tooth-bearing bone' },
+        { color: '#f08080', label: 'Gingiva — keratinized gum tissue' },
+        { color: '#f7f3ea', label: 'Enamel crowns' },
+        { color: '#d4af7a', label: 'Dentin/root' },
+      ],
+      facts: [
+        { label: 'Arch width', value: '~62 mm (between molars)' },
+        { label: 'Arch form', value: 'Parabolic / U-shaped' },
+        { label: 'Total teeth', value: '16 (full arch incl. 3rd molars)' },
+        { label: 'Bone type', value: 'Cortical + cancellous' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'caries',
+    icon: '🔴', name: 'Dental Caries',
+    sub: '3 stages of decay',
+    badge: 'PATHOLOGY', badgeColor: '#da3633',
+    camPos: [2, 2.5, 6],
+    create: buildCaries,
+    info: {
+      title: '🔴 Dental Caries — Tooth Decay',
+      sub: 'Progressive demineralization stages',
+      description: 'Dental caries is a bacterial-mediated process where acids from Streptococcus mutans dissolve the mineral content of enamel and dentin. Shown are 3 stages of progression.',
+      legend: [
+        { color: '#ffdd44', label: 'Stage 1 — White spot (reversible)' },
+        { color: '#d4752a', label: 'Stage 2 — Cavitation into dentin' },
+        { color: '#2a1505', label: 'Stage 3 — Deep caries near pulp' },
+        { color: '#f7f3ea', label: 'Healthy enamel' },
+      ],
+      facts: [
+        { label: 'Primary bacteria', value: 'S. mutans, Lactobacillus' },
+        { label: 'Critical pH', value: '<5.5 (enamel dissolves)' },
+        { label: 'First sign', value: 'White spot lesion' },
+        { label: 'Treatment', value: 'Restoration (composite/amalgam)' },
+      ],
+      severity: 'moderate',
+    },
+  },
+  {
+    id: 'periodontitis',
+    icon: '🩸', name: 'Periodontitis',
+    sub: 'Bone loss + inflammation',
+    badge: 'PATHOLOGY', badgeColor: '#da3633',
+    camPos: [2, 2, 7],
+    create: buildPeriodontitis,
+    info: {
+      title: '🩸 Periodontitis — Bone Loss',
+      sub: 'Irreversible attachment loss',
+      description: 'Periodontitis involves destruction of the periodontal supporting tissues (bone, PDL, cementum). The bone level drop is clearly visualized. Red zone shows inflammation.',
+      legend: [
+        { color: '#d4c19a', label: 'Alveolar bone (current level)' },
+        { color: '#d4c19a', label: 'Ghost = original bone level (lost)' },
+        { color: '#c43c3c', label: 'Inflamed gingival tissue' },
+        { color: '#ff2244', label: 'Periodontal pocket margin (≥4mm)' },
+        { color: '#b8a470', label: 'Calculus / tartar deposits' },
+      ],
+      facts: [
+        { label: 'Pocket depth', value: '≥4 mm (>3mm = diseased)' },
+        { label: 'Key bacteria', value: 'P. gingivalis, Aa' },
+        { label: 'Risk factor', value: 'Diabetes (bidirectional)' },
+        { label: 'Treatment', value: 'SRP, surgery, maintenance' },
+      ],
+      severity: 'high',
+    },
+  },
+  {
+    id: 'abscess',
+    icon: '💊', name: 'Periapical Abscess',
+    sub: 'Root apex infection',
+    badge: 'URGENT', badgeColor: '#f85149',
+    camPos: [0, 1, 8],
+    create: buildAbscess,
+    info: {
+      title: '💊 Periapical Abscess',
+      sub: 'Acute bacterial infection at root apex',
+      description: 'A periapical abscess forms when bacteria from the pulp space infect the periapical tissues, creating a pus-filled sac. It causes severe pain, swelling, and potential spread to fascial spaces.',
+      legend: [
+        { color: '#ffd700', label: 'Abscess capsule (outer rim)' },
+        { color: '#ff9900', label: 'Pus accumulation (suppuration)' },
+        { color: '#cc6600', label: 'Dense core (necrotic tissue)' },
+        { color: '#1a0a00', label: 'Periapical bone destruction' },
+      ],
+      facts: [
+        { label: 'Origin', value: 'Pulp necrosis → apical spread' },
+        { label: 'Symptoms', value: 'Severe pain, fever, swelling' },
+        { label: 'Spread risk', value: 'Ludwig angina, cavernous sinus' },
+        { label: 'Treatment', value: 'Drainage + RCT or extraction' },
+      ],
+      severity: 'urgent',
+    },
+  },
+  {
+    id: 'implant',
+    icon: '🔩', name: 'Dental Implant',
+    sub: '3-component system',
+    badge: 'PROSTH', badgeColor: '#238636',
+    camPos: [3, 2, 8],
+    create: buildImplant,
+    info: {
+      title: '🔩 Dental Implant System',
+      sub: 'Fixture · Abutment · Crown',
+      description: 'A dental implant is a titanium fixture surgically placed into the alveolar bone, mimicking a tooth root. Osseointegration occurs over 3–6 months before the final crown is placed.',
+      legend: [
+        { color: '#8ab0c8', label: 'Titanium fixture (implant body)' },
+        { color: '#9bbfd4', label: 'Abutment — connects fixture to crown' },
+        { color: '#faf7ef', label: 'Porcelain crown (prosthetic tooth)' },
+        { color: '#e0ceaa', label: 'Cortical bone' },
+        { color: '#d4a870', label: 'Cancellous / trabecular bone' },
+      ],
+      facts: [
+        { label: 'Material', value: 'Grade 4/5 pure titanium' },
+        { label: 'Osseointegration', value: '3–6 months' },
+        { label: 'Success rate', value: '95–98% at 10 years' },
+        { label: 'Torque', value: '35–45 N·cm at placement' },
+      ],
+      severity: null,
+    },
+  },
+  {
+    id: 'rootcanal',
+    icon: '🔬', name: 'Root Canal',
+    sub: 'Endodontic treatment',
+    badge: 'ENDO', badgeColor: '#9e6a03',
+    camPos: [3.5, 2.5, 6],
+    create: buildRootCanal,
+    info: {
+      title: '🔬 Root Canal Treatment',
+      sub: 'Gutta-percha obturation (cross-section)',
+      description: 'Root canal treatment (endodontic therapy) removes infected pulp tissue, shapes the canal system, and fills it with gutta-percha. The cross-section view shows the canal anatomy and filling.',
+      legend: [
+        { color: '#f0ede5', label: 'Enamel crown (transparent)' },
+        { color: '#cfa050', label: 'Dentin layer' },
+        { color: '#e05858', label: 'Root canal space' },
+        { color: '#d44040', label: 'Gutta-percha filling (GP)' },
+        { color: '#e8d5a8', label: 'Composite restoration access' },
+      ],
+      facts: [
+        { label: 'Gutta-percha', value: 'Natural latex polymer + ZnO' },
+        { label: 'Canal taper', value: '0.04–0.06 taper (ISO)' },
+        { label: 'Access', value: 'Occlusal opening + cavity' },
+        { label: 'Success rate', value: '85–97% (vital vs necrotic)' },
+      ],
+      severity: null,
+    },
+  },
+];
+
+// ── Scene State ───────────────────────────────────────────────────────────────
+let currentGroup = null;
+let wireframeOn  = false;
+let explodeOn    = false;
+let explodeAmt   = 0;
+
+function loadModel(modelDef) {
+  // Remove old
+  if (currentGroup) { scene.remove(currentGroup); currentGroup = null; }
+
+  const group = modelDef.create();
+  group.traverse(c => {
+    if (c.isMesh) {
+      c.castShadow = true;
+      c.receiveShadow = true;
+    }
+  });
+  scene.add(group);
+  currentGroup = group;
+
+  // Camera
+  const [cx, cy, cz] = modelDef.camPos;
+  camera.position.set(cx, cy, cz);
+  controls.target.set(0, cy * 0.45, 0);
+  controls.update();
+
+  // UI
+  document.getElementById('current-title').textContent = modelDef.name;
+  const badge = document.getElementById('current-badge');
+  badge.textContent = modelDef.badge;
+  badge.style.background = modelDef.badgeColor + '22';
+  badge.style.color = modelDef.badgeColor;
+  badge.style.border = `1px solid ${modelDef.badgeColor}66`;
+  badge.style.display = 'inline-flex';
+
+  // Info panel
+  const inf = modelDef.info;
+  document.getElementById('info-title').textContent = inf.title;
+  document.getElementById('info-sub').textContent = inf.sub;
+
+  let html = `<div class="info-section">
+    <div class="info-section-title">Description</div>
+    <p>${inf.description}</p>`;
+
+  if (inf.severity) {
+    const labels = { moderate: '⚠️ Moderate Severity', high: '🔴 High Severity', urgent: '🚨 Urgent — Seek Care' };
+    const cls    = { moderate: 'severity-low', high: 'severity-high', urgent: 'severity-urgent' };
+    html += `<div class="severity-pill ${cls[inf.severity]}">${labels[inf.severity]}</div>`;
+  }
+  html += `</div>`;
+
+  if (inf.legend?.length) {
+    html += `<div class="info-section">
+      <div class="info-section-title">Colour Legend</div>
+      <ul class="anatomy-legend">
+        ${inf.legend.map(l => `<li class="legend-item">
+          <div class="legend-dot" style="background:${l.color};border:1px solid rgba(255,255,255,0.15)"></div>
+          <span>${l.label}</span>
+        </li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  if (inf.facts?.length) {
+    html += `<div class="info-section">
+      <div class="info-section-title">Clinical Facts</div>
+      ${inf.facts.map(f => `
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #21262d;">
+          <span style="color:#8b949e;font-size:0.8rem;">${f.label}</span>
+          <span style="color:#e6edf3;font-size:0.8rem;font-weight:600;">${f.value}</span>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  document.getElementById('info-body').innerHTML = html;
+
+  // Reset explode
+  explodeOn  = false;
+  explodeAmt = 0;
+  document.getElementById('explode-btn').classList.remove('active');
+
+  // Re-apply wireframe
+  if (wireframeOn) applyWireframe(true);
+}
+
+// ── Build Sidebar Cards ───────────────────────────────────────────────────────
+const listEl = document.getElementById('model-list');
+MODELS.forEach((m, idx) => {
+  const card = document.createElement('div');
+  card.className = 'model-card' + (idx === 0 ? ' active' : '');
+  card.dataset.id = m.id;
+  card.innerHTML = `
+    <div class="model-icon" style="background:${m.info.badgeColor || '#1f6feb'}22;">
+      ${m.icon}
+    </div>
+    <div class="model-card-info">
+      <div class="model-card-name">${m.name}</div>
+      <div class="model-card-sub">${m.sub}</div>
+    </div>`;
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    loadModel(m);
+  });
+  listEl.appendChild(card);
+});
+
+// ── Controls ─────────────────────────────────────────────────────────────────
+function resetView() {
+  const active = MODELS.find(m => m.id === document.querySelector('.model-card.active')?.dataset.id);
+  if (active) {
+    const [cx, cy, cz] = active.camPos;
+    camera.position.set(cx, cy, cz);
+    controls.target.set(0, cy * 0.45, 0);
+    controls.update();
+  }
+}
+
+function applyWireframe(on) {
+  if (!currentGroup) return;
+  currentGroup.traverse(c => {
+    if (c.isMesh && c.material) {
+      if (Array.isArray(c.material)) c.material.forEach(m => m.wireframe = on);
+      else c.material.wireframe = on;
+    }
+  });
+}
+
+function toggleWireframe() {
+  wireframeOn = !wireframeOn;
+  applyWireframe(wireframeOn);
+  document.getElementById('wireframe-btn').classList.toggle('active', wireframeOn);
+}
+
+function toggleAutoRotate() {
+  controls.autoRotate = !controls.autoRotate;
+  document.getElementById('rotate-btn').classList.toggle('active', controls.autoRotate);
+}
+
+function toggleExplode() {
+  explodeOn = !explodeOn;
+  document.getElementById('explode-btn').classList.toggle('active', explodeOn);
+}
+
+function takeScreenshot() {
+  renderer.render(scene, camera);
+  const link = document.createElement('a');
+  link.download = 'dental-model.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+window.resetView      = resetView;
+window.toggleWireframe = toggleWireframe;
+window.toggleAutoRotate = toggleAutoRotate;
+window.toggleExplode  = toggleExplode;
+window.takeScreenshot = takeScreenshot;
+
+// ── Resize Handler ────────────────────────────────────────────────────────────
+function resize() {
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── Animation ─────────────────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Glow ring pulse (abscess model)
+  if (currentGroup) {
+    currentGroup.traverse(c => {
+      if (c.isMesh && c.userData.glowRing) {
+        c.material.opacity = (0.15 / c.userData.glowRing) * (0.5 + 0.5 * Math.sin(t * 2 + c.userData.glowRing));
+        const s = 1 + 0.04 * Math.sin(t * 1.5);
+        c.scale.setScalar(s);
+      }
+    });
+
+    // Explode animation
+    if (explodeOn && explodeAmt < 1) explodeAmt = Math.min(1, explodeAmt + 0.02);
+    if (!explodeOn && explodeAmt > 0) explodeAmt = Math.max(0, explodeAmt - 0.02);
+    if (explodeAmt > 0 && currentGroup.children.length > 1) {
+      currentGroup.children.forEach((c, i) => {
+        const dir = new THREE.Vector3(
+          Math.cos(i * 1.3) * 0.5,
+          (i % 3 - 1) * 0.3,
+          Math.sin(i * 1.3) * 0.5
+        );
+        c.position.lerp(dir.multiplyScalar(explodeAmt * 1.5), 0.08);
+      });
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ── Initialize first model (diagram-aware) ────────────────────────────────────
+animate();
+
+// ── roundRect polyfill for older browsers ─────────────────────────────────────
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    const rad = Math.min(typeof r === 'number' ? r : (Array.isArray(r) ? r[0] : 0), w/2, h/2);
+    this.moveTo(x + rad, y);
+    this.lineTo(x + w - rad, y);
+    this.arcTo(x + w, y,     x + w, y + rad,     rad);
+    this.lineTo(x + w, y + h - rad);
+    this.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+    this.lineTo(x + rad, y + h);
+    this.arcTo(x,     y + h, x,     y + h - rad, rad);
+    this.lineTo(x, y + rad);
+    this.arcTo(x,     y,     x + rad, y,          rad);
+    this.closePath();
+  };
+}
+
+// ── Dental Anatomy Diagrams (Canvas 2D) ───────────────────────────────────────
+function drawDiagram(ctx, id, w, h) {
+  try {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, w, h);
+    const fn = DIAGRAMS[id];
+    if (fn) fn(ctx, w, h);
+  } catch(e) { /* diagram failed silently */ }
+}
+
+const DIAGRAMS = {
+  molar(ctx, w, h) {
+    const cx = w/2, by = h - 30;
+    // Root 1 (mesial)
+    ctx.fillStyle = '#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx-22, by-70, 13, 60, -0.15, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b8915a'; ctx.lineWidth=1.5; ctx.stroke();
+    // Root 2 (distal)
+    ctx.fillStyle = '#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx+22, by-70, 11, 55, 0.15, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b8915a'; ctx.stroke();
+    // Crown
+    ctx.fillStyle = '#f5f1e8'; ctx.beginPath();
+    ctx.roundRect(cx-45, by-160, 90, 80, 10); ctx.fill();
+    ctx.strokeStyle='#c8c0a8'; ctx.lineWidth=2; ctx.stroke();
+    // Cusps
+    [[cx-28,by-162],[cx,by-166],[cx+28,by-162],[cx-14,by-162],[cx+14,by-162]].forEach(([x,y])=>{
+      ctx.fillStyle='#ede8da'; ctx.beginPath(); ctx.ellipse(x,y,10,7,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#c0b898'; ctx.lineWidth=1; ctx.stroke();
+    });
+    // Fissure
+    ctx.strokeStyle='#a89878'; ctx.lineWidth=1.5; ctx.beginPath();
+    ctx.moveTo(cx-30,by-130); ctx.lineTo(cx+30,by-130); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,by-160); ctx.lineTo(cx,by-100); ctx.stroke();
+    // Labels
+    ctx.fillStyle='#555'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Enamel', cx, by-148);
+    ctx.fillStyle='#777'; ctx.font='10px sans-serif';
+    ctx.fillText('Mesial root', cx-22, by-3);
+    ctx.fillText('Distal root', cx+22, by-3);
+    ctx.fillText('Molar Crown', cx, by-170);
+  },
+
+  'cross-section'(ctx, w, h) {
+    const cx = w/2, cy = h/2 + 10;
+    // Outer enamel
+    ctx.fillStyle='#f0ede5'; ctx.beginPath();
+    ctx.ellipse(cx, cy, 55, 85, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#d0c8b8'; ctx.lineWidth=2; ctx.stroke();
+    // Dentin
+    ctx.fillStyle='#d4a853'; ctx.beginPath();
+    ctx.ellipse(cx, cy, 42, 70, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b88c3a'; ctx.lineWidth=1.5; ctx.stroke();
+    // Pulp
+    ctx.fillStyle='#d63c3c'; ctx.beginPath();
+    ctx.ellipse(cx, cy, 18, 42, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b02020'; ctx.lineWidth=1; ctx.stroke();
+    // Labels with lines
+    const label = (txt, lx, ly, ax, ay) => {
+      ctx.strokeStyle='#999'; ctx.lineWidth=1; ctx.setLineDash([3,2]);
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(lx,ly); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#333'; ctx.font='10px sans-serif'; ctx.textAlign= lx<cx?'right':'left';
+      ctx.fillText(txt, lx, ly);
+    };
+    label('Enamel', 18, cy-50, cx-40, cy-30);
+    label('Dentin', 18, cy, cx-28, cy-5);
+    label('Pulp', 18, cy+45, cx-5, cy+20);
+    label('Cementum', w-10, cy+30, cx+40, cy+35);
+  },
+
+  incisor(ctx, w, h) {
+    const cx = w/2, by = h - 20;
+    // Root
+    ctx.fillStyle='#d4b87a'; ctx.beginPath();
+    ctx.ellipse(cx, by-80, 12, 65, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b89a5a'; ctx.lineWidth=1.5; ctx.stroke();
+    // Crown — flat trapezoid
+    ctx.fillStyle='#f8f5ee'; ctx.beginPath();
+    ctx.moveTo(cx-38, by-145); ctx.lineTo(cx+38, by-145);
+    ctx.lineTo(cx+30, by-185); ctx.lineTo(cx-30, by-185);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#d0c8b0'; ctx.lineWidth=2; ctx.stroke();
+    // Mamelons
+    [-18,0,18].forEach(dx => {
+      ctx.fillStyle='#f0ede0'; ctx.beginPath();
+      ctx.ellipse(cx+dx, by-186, 9, 5, 0, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#c8c0a0'; ctx.lineWidth=1; ctx.stroke();
+    });
+    // CEJ line
+    ctx.strokeStyle='#a88860'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(cx-18,by-145); ctx.lineTo(cx+18,by-145); ctx.stroke();
+    ctx.setLineDash([]);
+    // Labels
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Central Incisor', cx, 18);
+    ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+    ctx.fillText('Mamelons', cx, by-196);
+    ctx.fillText('Crown', cx+45, by-165); ctx.fillText('Root', cx+20, by-55);
+    ctx.fillText('CEJ', cx-28, by-140);
+  },
+
+  canine(ctx, w, h) {
+    const cx = w/2, by = h - 20;
+    // Long root
+    ctx.fillStyle='#d4b47a'; ctx.beginPath();
+    ctx.ellipse(cx, by-85, 13, 75, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b89458'; ctx.lineWidth=1.5; ctx.stroke();
+    // Pointed crown
+    ctx.fillStyle='#f5f0e5'; ctx.beginPath();
+    ctx.moveTo(cx-32, by-160); ctx.lineTo(cx+32, by-160);
+    ctx.lineTo(cx, by-200); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#d0c8a8'; ctx.lineWidth=2; ctx.stroke();
+    // Cusp tip highlight
+    ctx.fillStyle='#fffef8'; ctx.beginPath();
+    ctx.ellipse(cx, by-197, 6, 4, 0, 0, Math.PI*2); ctx.fill();
+    // Labels
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Canine (Cuspid)', cx, 18);
+    ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+    ctx.fillText('Single cusp', cx+50, by-195);
+    ctx.fillText('Longest root', cx+50, by-80);
+    ctx.strokeStyle='#aaa'; ctx.lineWidth=1; ctx.setLineDash([3,2]);
+    ctx.beginPath(); ctx.moveTo(cx+12,by-197); ctx.lineTo(cx+44,by-195); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+14,by-85); ctx.lineTo(cx+44,by-80); ctx.stroke();
+    ctx.setLineDash([]);
+  },
+
+  jaw(ctx, w, h) {
+    const cx = w/2, cy = h/2 + 20;
+    // Draw arch (U-shape)
+    ctx.strokeStyle='#d4c19a'; ctx.lineWidth=28; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.arc(cx, cy+10, 85, Math.PI*1.05, Math.PI*1.95, false); ctx.stroke();
+    // Gum overlay
+    ctx.strokeStyle='rgba(240,128,128,0.5)'; ctx.lineWidth=20;
+    ctx.beginPath();
+    ctx.arc(cx, cy+10, 85, Math.PI*1.05, Math.PI*1.95, false); ctx.stroke();
+    // Teeth along arch
+    const angles = [200,218,236,254,286,304,322,340];
+    angles.forEach(deg => {
+      const a = deg * Math.PI/180;
+      const tx = cx + Math.cos(a)*85, ty = cy+10 + Math.sin(a)*85;
+      const nx = Math.cos(a), ny = Math.sin(a);
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(a + Math.PI/2);
+      ctx.fillStyle='#f5f1e8';
+      ctx.fillRect(-6,-14,12,18);
+      ctx.strokeStyle='#c8c0a0'; ctx.lineWidth=1.2; ctx.strokeRect(-6,-14,12,18);
+      ctx.restore();
+    });
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Dental Arch (Mandible)', cx, 18);
+    ctx.fillStyle='#666'; ctx.font='10px sans-serif';
+    ctx.fillText('Alveolar bone', cx, cy+110);
+  },
+
+  caries(ctx, w, h) {
+    const cx = w/2, by = h - 30;
+    // Base tooth
+    ctx.fillStyle='#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx, by-70, 14, 55, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#f5f1e8'; ctx.beginPath();
+    ctx.roundRect(cx-40, by-155, 80, 75, 8); ctx.fill();
+    ctx.strokeStyle='#d0c8b0'; ctx.lineWidth=1.5; ctx.stroke();
+    // Stage 1: white spot
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.beginPath();
+    ctx.ellipse(cx-15, by-135, 12, 9, -0.3, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#e0dcd0'; ctx.lineWidth=1; ctx.stroke();
+    // Stage 2: brown cavity
+    ctx.fillStyle='#7a4520'; ctx.beginPath();
+    ctx.ellipse(cx+5, by-125, 14, 11, 0.2, 0, Math.PI*2); ctx.fill();
+    // Stage 3: deep dark
+    ctx.fillStyle='#2a1205'; ctx.beginPath();
+    ctx.ellipse(cx+15, by-113, 9, 7, 0.3, 0, Math.PI*2); ctx.fill();
+    // Arrows + labels
+    const lbl = (t, x, y) => { ctx.fillStyle='#444'; ctx.font='10px sans-serif'; ctx.textAlign='left'; ctx.fillText(t,x,y); };
+    lbl('① White spot', cx-40, by-170);
+    lbl('② Dentin invasion', cx-40, by-182);
+    lbl('③ Deep caries', cx-40, by-194);
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Caries Progression', cx, 18);
+  },
+
+  periodontitis(ctx, w, h) {
+    const cx = w/2, by = h - 20;
+    // Bone (reduced)
+    ctx.fillStyle='#d4c19a'; ctx.beginPath();
+    ctx.roundRect(cx-55, by-95, 110, 60, 6); ctx.fill();
+    ctx.strokeStyle='#b8a878'; ctx.lineWidth=1.5; ctx.stroke();
+    // Ghost bone (where it was)
+    ctx.fillStyle='rgba(212,193,154,0.2)'; ctx.strokeStyle='rgba(184,168,120,0.4)';
+    ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.roundRect(cx-55, by-130, 110, 25, 4); ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+    // Tooth root (exposed)
+    ctx.fillStyle='#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx, by-130, 14, 55, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b88a50'; ctx.lineWidth=1.5; ctx.stroke();
+    // Crown
+    ctx.fillStyle='#f5f1e8'; ctx.beginPath();
+    ctx.roundRect(cx-35, by-205, 70, 65, 8); ctx.fill();
+    ctx.strokeStyle='#c8c0a8'; ctx.lineWidth=1.5; ctx.stroke();
+    // Inflamed gum
+    ctx.fillStyle='rgba(196,60,60,0.5)'; ctx.beginPath();
+    ctx.ellipse(cx, by-120, 28, 22, 0, 0, Math.PI*2); ctx.fill();
+    // Pocket depth arrow
+    ctx.strokeStyle='#e02244'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx+35, by-130); ctx.lineTo(cx+35, by-95); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+30, by-130); ctx.lineTo(cx+40, by-130); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+30, by-95); ctx.lineTo(cx+40, by-95); ctx.stroke();
+    ctx.fillStyle='#e02244'; ctx.font='9px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Pocket', cx+40, by-118); ctx.fillText('≥4mm', cx+40, by-106);
+    // Bone loss arrow
+    ctx.strokeStyle='#888'; ctx.lineWidth=1.5; ctx.setLineDash([3,2]);
+    ctx.beginPath(); ctx.moveTo(cx-60, by-130); ctx.lineTo(cx-60, by-95); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#666'; ctx.font='9px sans-serif'; ctx.textAlign='right';
+    ctx.fillText('Bone', cx-63, by-118); ctx.fillText('loss', cx-63, by-106);
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Periodontitis', cx, 18);
+  },
+
+  abscess(ctx, w, h) {
+    const cx = w/2, cy = h*0.55;
+    // Surrounding bone
+    ctx.fillStyle='rgba(212,193,154,0.6)'; ctx.beginPath();
+    ctx.ellipse(cx, cy+20, 80, 55, 0, 0, Math.PI*2); ctx.fill();
+    // Abscess glow rings
+    [55,42,30].forEach((r,i) => {
+      ctx.fillStyle=`rgba(255,${180-i*40},0,${0.08+i*0.05})`; ctx.beginPath();
+      ctx.ellipse(cx, cy+20, r, r*0.85, 0, 0, Math.PI*2); ctx.fill();
+    });
+    // Pus core
+    ctx.fillStyle='#ff9900'; ctx.beginPath();
+    ctx.ellipse(cx, cy+20, 22, 18, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#cc5500'; ctx.beginPath();
+    ctx.ellipse(cx, cy+22, 11, 10, 0, 0, Math.PI*2); ctx.fill();
+    // Root above
+    ctx.fillStyle='#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx, cy-45, 13, 45, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#b88a50'; ctx.lineWidth=1.5; ctx.stroke();
+    // Crown
+    ctx.fillStyle='#f5f1e8'; ctx.beginPath();
+    ctx.roundRect(cx-32, cy-145, 64, 58, 8); ctx.fill();
+    ctx.strokeStyle='#c8c0a8'; ctx.lineWidth=1.5; ctx.stroke();
+    // Canal line (necrotic path)
+    ctx.strokeStyle='rgba(180,30,30,0.6)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(cx, cy-90); ctx.lineTo(cx, cy+5); ctx.stroke();
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Periapical Abscess', cx, 18);
+    ctx.fillStyle='#c43c00'; ctx.font='10px sans-serif';
+    ctx.fillText('Pus / necrosis', cx, cy+55);
+  },
+
+  implant(ctx, w, h) {
+    const cx = w/2, by = h - 20;
+    // Bone block
+    ctx.fillStyle='#e0ceaa'; ctx.beginPath();
+    ctx.roundRect(cx-60, by-110, 120, 80, 5); ctx.fill();
+    ctx.strokeStyle='#c0aa80'; ctx.lineWidth=1.5; ctx.stroke();
+    // Cancellous inside
+    ctx.fillStyle='rgba(212,168,112,0.5)'; ctx.beginPath();
+    ctx.roundRect(cx-44, by-100, 88, 64, 4); ctx.fill();
+    // Implant fixture (titanium, grey-blue)
+    ctx.fillStyle='#8ab0c8'; ctx.beginPath();
+    ctx.roundRect(cx-11, by-180, 22, 155, 4); ctx.fill();
+    ctx.strokeStyle='#5a90b0'; ctx.lineWidth=1; ctx.stroke();
+    // Screw threads
+    ctx.strokeStyle='#5a90b0'; ctx.lineWidth=2;
+    for(let y=by-170;y<by-50;y+=12){
+      ctx.beginPath(); ctx.moveTo(cx-14,y); ctx.lineTo(cx+14,y); ctx.stroke();
+    }
+    // Abutment
+    ctx.fillStyle='#9bbfd4'; ctx.beginPath();
+    ctx.roundRect(cx-9, by-215, 18, 38, 3); ctx.fill();
+    ctx.strokeStyle='#6a9fc0'; ctx.lineWidth=1; ctx.stroke();
+    // Crown
+    ctx.fillStyle='#faf7ef'; ctx.beginPath();
+    ctx.ellipse(cx, by-245, 30, 22, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#d0c8b0'; ctx.lineWidth=1.5; ctx.stroke();
+    // Labels
+    const lbl = (t,x,y,align='left') => { ctx.fillStyle='#444'; ctx.font='10px sans-serif'; ctx.textAlign=align; ctx.fillText(t,x,y); };
+    lbl('Crown', cx+38, by-244);
+    lbl('Abutment', cx+38, by-200);
+    lbl('Fixture', cx+38, by-145);
+    lbl('Bone', cx+38, by-75);
+    ctx.strokeStyle='#aaa'; ctx.lineWidth=1; ctx.setLineDash([3,2]);
+    [[cx+13,by-245,cx+36,by-244],[cx+10,by-200,cx+36,by-200],[cx+12,by-145,cx+36,by-145],[cx+62,by-75,cx+36,by-75]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Dental Implant', cx, 18);
+  },
+
+  rootcanal(ctx, w, h) {
+    const cx = w/2, by = h - 20;
+    // Root outline
+    ctx.fillStyle='#d4a870'; ctx.beginPath();
+    ctx.ellipse(cx, by-75, 15, 60, 0, 0, Math.PI*2); ctx.fill();
+    // Crown
+    ctx.fillStyle='rgba(240,237,229,0.9)'; ctx.beginPath();
+    ctx.roundRect(cx-38, by-170, 76, 82, 9); ctx.fill();
+    ctx.strokeStyle='#c8c0a8'; ctx.lineWidth=2; ctx.stroke();
+    // Dentin layer
+    ctx.fillStyle='rgba(207,160,80,0.6)'; ctx.beginPath();
+    ctx.ellipse(cx, by-75, 11, 52, 0, 0, Math.PI*2); ctx.fill();
+    // Canal fill (gutta percha)
+    ctx.fillStyle='#d44040'; ctx.beginPath();
+    ctx.ellipse(cx, by-78, 5, 46, 0, 0, Math.PI*2); ctx.fill();
+    // Canal in crown
+    ctx.fillStyle='#d44040'; ctx.beginPath();
+    ctx.roundRect(cx-5, by-165, 10, 80, 3); ctx.fill();
+    // Access cavity
+    ctx.fillStyle='#1a1a2e'; ctx.beginPath();
+    ctx.ellipse(cx, by-155, 10, 7, 0, 0, Math.PI*2); ctx.fill();
+    // Restoration
+    ctx.fillStyle='#e8d5a8'; ctx.beginPath();
+    ctx.ellipse(cx, by-158, 12, 5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#c0a878'; ctx.lineWidth=1; ctx.stroke();
+    // Labels
+    ctx.fillStyle='#444'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Root Canal (RCT)', cx, 18);
+    const lbl = (t,x,y,align)=>{ctx.fillStyle='#555';ctx.font='10px sans-serif';ctx.textAlign=align||'left';ctx.fillText(t,x,y);};
+    lbl('Composite', cx+42, by-156);
+    lbl('Access', cx+42, by-145);
+    lbl('GP fill', cx+42, by-78);
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=1; ctx.setLineDash([3,2]);
+    [[cx+11,by-158,cx+40,by-156],[cx+11,by-155,cx+40,by-145],[cx+6,by-78,cx+40,by-78]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  },
+};
+
+// ── Gallery ───────────────────────────────────────────────────────────────────
+let galleryOpen = false;
+
+function toggleGallery() {
+  galleryOpen = !galleryOpen;
+  document.getElementById('gallery-strip').classList.toggle('open', galleryOpen);
+  document.getElementById('gallery-btn').classList.toggle('active', galleryOpen);
+  document.querySelector('.canvas-controls').style.bottom = galleryOpen ? '10.5rem' : '1rem';
+  document.querySelector('.hint-bar').style.bottom = galleryOpen ? '12.2rem' : '3.5rem';
+}
+
+function buildGallery() {
+  const strip = document.getElementById('gallery-strip');
+  strip.innerHTML = '';
+  MODELS.forEach(m => {
+    const thumb = document.createElement('div');
+    thumb.className = 'gal-thumb';
+    thumb.dataset.id = m.id;
+    const c = document.createElement('canvas');
+    c.width = 82; c.height = 100;
+    drawDiagram(c.getContext('2d'), m.id, 82, 100);
+    const lbl = document.createElement('div');
+    lbl.className = 'gal-label';
+    lbl.textContent = m.name;
+    thumb.appendChild(c);
+    thumb.appendChild(lbl);
+    thumb.addEventListener('click', () => openDiagModal(m));
+    strip.appendChild(thumb);
+  });
+}
+
+function openDiagModal(modelDef) {
+  document.getElementById('modal-title').textContent = modelDef.info.title;
+  const c = document.getElementById('modal-canvas');
+  drawDiagram(c.getContext('2d'), modelDef.id, c.width, c.height);
+  document.getElementById('diag-modal').classList.add('open');
+}
+
+function closeDiagModal() {
+  document.getElementById('diag-modal').classList.remove('open');
+}
+
+window.toggleGallery  = toggleGallery;
+window.closeDiagModal = closeDiagModal;
+
+// Append anatomy diagram to info panel (called AFTER loadModel populates info-body)
+function appendDiagramToPanel(modelDef) {
+  const body = document.getElementById('info-body');
+  const section = document.createElement('div');
+  section.className = 'info-section ref-img-section';
+  section.title = 'Click to enlarge diagram';
+  section.innerHTML = '<div class="info-section-title">📐 Anatomical Diagram</div>';
+  const c = document.createElement('canvas');
+  c.width = 230; c.height = 210;
+  drawDiagram(c.getContext('2d'), modelDef.id, 230, 210);
+  section.appendChild(c);
+  section.addEventListener('click', () => openDiagModal(modelDef));
+  body.appendChild(section);
+  document.querySelectorAll('.gal-thumb').forEach(t => t.classList.toggle('sel', t.dataset.id === modelDef.id));
+}
+
+// Replace model-card listeners so loadModel + diagram run as one path
+document.querySelectorAll('.model-card').forEach(card => {
+  const fresh = card.cloneNode(true);
+  card.parentNode.replaceChild(fresh, card);
+  fresh.addEventListener('click', () => {
+    document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+    fresh.classList.add('active');
+    const m = MODELS.find(x => x.id === fresh.dataset.id);
+    if (!m) return;
+    loadModel(m);
+    try { appendDiagramToPanel(m); } catch(e) {}
+  });
+});
+
+// 3D model MUST load first; diagram code is secondary and can fail safely
+loadModel(MODELS[0]);
+try { buildGallery(); } catch(e) {}
+try { appendDiagramToPanel(MODELS[0]); } catch(e) {}
+</script>
+</body>
+</html>

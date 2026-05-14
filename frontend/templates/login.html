@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:3rem;">🦷</div>
+      <h1>DentAI</h1>
+      <p>Oral Pathology Education Platform</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+      </div>
+      <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg" data-label="Sign In">
+        Sign In
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:1.5rem; font-size:0.9rem; color:#6c757d;">
+      Don't have an account? <a href="/register" style="color:#1a6fb5;">Create one</a>
+    </div>
+
+    <div style="margin-top:1.5rem; padding:1rem; background:#f0f4f8; border-radius:8px; font-size:0.8rem; color:#6c757d;">
+      <strong>Demo Accounts:</strong><br>
+      Student: student@demo.com / demo1234<br>
+      Faculty: faculty@demo.com / demo1234
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    DentAI.setLoading("login-btn", true);
+    try {
+      const user = await DentAI.login(
+        document.getElementById("email").value,
+        document.getElementById("password").value
+      );
+      window.location.href = user.role === "faculty" ? "/faculty" : "/student";
+    } catch (err) {
+      DentAI.showAlert("alert-box", err.message, "danger");
+      DentAI.setLoading("login-btn", false);
+    }
+  });
+</script>
+</body>
+</html>

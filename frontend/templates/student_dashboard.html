@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h2>🦷 DentAI</h2>
+      <span class="user-role">Student Portal</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Learning</div>
+      <a class="nav-item active" data-page="overview">
+        <span class="icon">🏠</span> Dashboard
+      </a>
+      <a class="nav-item" href="/cv-analysis">
+        <span class="icon">🔬</span> CV Diagnosis
+      </a>
+      <a class="nav-item" href="/3d-models">
+        <span class="icon">🦷</span> 3D Dental Models
+      </a>
+      <a class="nav-item" href="/ar-viewer">
+        <span class="icon">🥽</span> AR Viewer
+      </a>
+
+      <div class="nav-section">Quizzes</div>
+      <a class="nav-item" data-page="sample-quiz">
+        <span class="icon">📝</span> Sample Quiz
+      </a>
+      <a class="nav-item" data-page="quiz-list">
+        <span class="icon">📋</span> All Quizzes
+      </a>
+      <a class="nav-item" data-page="my-results">
+        <span class="icon">📊</span> My Results
+      </a>
+
+      <div class="nav-section">Study Tools</div>
+      <a class="nav-item" data-page="chatbot">
+        <span class="icon">🤖</span> AI Tutor
+      </a>
+      <a class="nav-item" data-page="notes">
+        <span class="icon">📌</span> Notes
+      </a>
+      <a class="nav-item" data-page="bookmarks">
+        <span class="icon">🔖</span> Bookmarks
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="user-name">Student</span>
+      <br>
+      <a href="#" onclick="DentAI.logout()" style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Sign Out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <div class="topbar-user">
+        <div class="user-avatar">A</div>
+        <div>
+          <div style="font-weight:600; font-size:0.9rem;" class="user-name">Student</div>
+          <div style="font-size:0.75rem; color:#6c757d;">Student</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Overview Page -->
+      <div id="page-overview">
+        <div id="alert-box"></div>
+        <h2 class="section-title">🎓 Welcome back, <span class="user-name">Student</span>!</h2>
+
+        <div class="stats-grid">
+          <div class="stat-card teal">
+            <div class="stat-value" id="stat-attempts">—</div>
+            <div class="stat-label">Quiz Attempts</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-value" id="stat-avg">—</div>
+            <div class="stat-label">Average Score</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-best">—</div>
+            <div class="stat-label">Best Score</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">📈 Score Progression</div>
+            <canvas id="progress-chart" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">⚡ Quick Actions</div>
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+              <button class="btn btn-primary" onclick="showPage('sample-quiz')">📝 Take Sample Quiz</button>
+              <button class="btn btn-secondary" onclick="showPage('chatbot')">🤖 Ask AI Tutor</button>
+              <a href="/cv-analysis" class="btn btn-outline">🔬 Analyze Dental Image</a>
+              <a href="/ar-viewer" class="btn btn-outline">🥽 View AR Models</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-title">📚 Oral Pathology Topics</div>
+          <div id="topics-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:1rem; margin-top:0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Sample Quiz Page -->
+      <div id="page-sample-quiz" style="display:none;">
+        <h2 class="section-title">📝 Sample Quiz</h2>
+        <div class="card" style="max-width:600px;">
+          <div class="form-group">
+            <label class="form-label">Select Topic</label>
+            <select id="quiz-topic" class="form-control form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of Questions</label>
+            <select id="quiz-count" class="form-control form-select">
+              <option value="3">3 Questions</option>
+              <option value="5" selected>5 Questions</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="start-sample-btn" onclick="startSampleQuiz()">Start Quiz</button>
+        </div>
+        <div id="sample-quiz-area" style="display:none; margin-top:1.5rem;"></div>
+      </div>
+
+      <!-- Quiz List -->
+      <div id="page-quiz-list" style="display:none;">
+        <h2 class="section-title">📋 Available Quizzes</h2>
+        <div id="quiz-list-container">
+          <div class="text-center text-muted">Loading quizzes...</div>
+        </div>
+      </div>
+
+      <!-- My Results -->
+      <div id="page-my-results" style="display:none;">
+        <h2 class="section-title">📊 My Quiz Results</h2>
+        <div id="results-container">
+          <div class="text-center text-muted">Loading results...</div>
+        </div>
+      </div>
+
+      <!-- Chatbot -->
+      <div id="page-chatbot" style="display:none;">
+        <h2 class="section-title">🤖 AI Tutor — DentAI Assistant</h2>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="chat-container">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" class="form-control" placeholder="Ask about dental caries, periodontitis, oral lesions...">
+              <button id="send-btn" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div id="page-notes" style="display:none;">
+        <h2 class="section-title">📌 My Notes</h2>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Add Note</div>
+            <div class="form-group">
+              <label class="form-label">Title</label>
+              <input type="text" id="note-title" class="form-control" placeholder="Note title...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Topic</label>
+              <input type="text" id="note-topic" class="form-control" placeholder="e.g. Dental Caries">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Content</label>
+              <textarea id="note-content" class="form-control" rows="5" placeholder="Write your notes here..."></textarea>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-primary" id="note-save-btn" onclick="saveNote()">Save Note</button>
+              <button class="btn btn-outline" id="note-cancel-btn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+            </div>
+            <div id="note-alert" class="mt-2"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Saved Notes</div>
+            <div id="notes-list"><div class="text-muted text-center">No notes yet.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bookmarks -->
+      <div id="page-bookmarks" style="display:none;">
+        <h2 class="section-title">🔖 Bookmarks</h2>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Add Bookmark</div>
+            <div class="form-group">
+              <label class="form-label">Topic</label>
+              <input type="text" id="bm-topic" class="form-control" placeholder="Topic name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <input type="text" id="bm-desc" class="form-control" placeholder="Short description">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reference / URL (optional)</label>
+              <input type="text" id="bm-url" class="form-control" placeholder="Reference link or textbook page">
+            </div>
+            <button class="btn btn-primary" onclick="addBookmark()">Bookmark</button>
+            <div id="bm-alert" class="mt-2"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">My Bookmarks</div>
+            <div id="bookmarks-list"><div class="text-muted text-center">No bookmarks yet.</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /dashboard -->
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/chatbot.js"></script>
+<script src="/static/js/quiz.js"></script>
+<script>
+  const user = DentAI.initPage("student");
+  let topics = {};
+  let sampleQuizData = null;
+  let sampleAnswers = {};
+  let editingNoteId = null;
+
+  // ── Page Navigation ──────────────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll("[id^='page-']").forEach(el => el.style.display = "none");
+    document.getElementById(`page-${name}`).style.display = "block";
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    document.querySelector(`[data-page="${name}"]`)?.classList.add("active");
+    const titles = {
+      overview: "Dashboard", "sample-quiz": "Sample Quiz", "quiz-list": "All Quizzes",
+      "my-results": "My Results", chatbot: "AI Tutor", notes: "My Notes", bookmarks: "Bookmarks",
+    };
+    document.getElementById("page-title").textContent = titles[name] || name;
+
+    if (name === "chatbot") Chatbot.init();
+    if (name === "quiz-list") loadQuizList();
+    if (name === "my-results") loadMyResults();
+    if (name === "notes") loadNotes();
+    if (name === "bookmarks") loadBookmarks();
+  }
+
+  document.querySelectorAll(".nav-item[data-page]").forEach(el => {
+    el.addEventListener("click", () => showPage(el.dataset.page));
+  });
+
+  // ── Init ─────────────────────────────────────────────────────────────────
+  async function init() {
+    topics = await DentAI.apiFetch("/api/quiz/topics");
+    // Populate topic selects
+    const sel = document.getElementById("quiz-topic");
+    Object.entries(topics).forEach(([key, label]) => {
+      sel.innerHTML += `<option value="${key}">${label}</option>`;
+    });
+
+    // Topics grid
+    const grid = document.getElementById("topics-grid");
+    Object.entries(topics).forEach(([key, label]) => {
+      grid.innerHTML += `
+        <div class="card" style="cursor:pointer; padding:1rem; text-align:center;" onclick="showPage('sample-quiz')">
+          <div style="font-size:1.5rem;">🦷</div>
+          <div style="font-weight:600; font-size:0.9rem; margin-top:0.5rem;">${label}</div>
+        </div>
+      `;
+    });
+
+    // Stats
+    const progress = await DentAI.apiFetch("/api/reports/student/my-progress");
+    document.getElementById("stat-attempts").textContent = progress.total_attempts;
+    document.getElementById("stat-avg").textContent = progress.average_score + "%";
+    document.getElementById("stat-best").textContent = progress.best_score + "%";
+
+    // Chart
+    if (progress.history.length > 0) {
+      const ctx = document.getElementById("progress-chart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: progress.history.map((_, i) => `Attempt ${i+1}`),
+          datasets: [{
+            label: "Score (%)",
+            data: progress.history.map(h => h.score),
+            borderColor: "#1a6fb5",
+            backgroundColor: "rgba(26,111,181,0.1)",
+            tension: 0.3,
+            fill: true,
+          }]
+        },
+        options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+      });
+    }
+  }
+
+  // ── Sample Quiz ──────────────────────────────────────────────────────────
+  async function startSampleQuiz() {
+    const topic = document.getElementById("quiz-topic").value;
+    const num = parseInt(document.getElementById("quiz-count").value);
+    const btn = document.getElementById("start-sample-btn");
+    btn.disabled = true; btn.textContent = "Loading...";
+    try {
+      const data = await DentAI.apiFetch("/api/quiz/sample", {
+        method: "POST",
+        body: JSON.stringify({ topic, num_questions: num }),
+      });
+      sampleQuizData = data;
+      sampleAnswers = {};
+      renderSampleQuiz(data.questions, 0);
+      document.getElementById("sample-quiz-area").style.display = "block";
+    } catch(e) {
+      alert(e.message);
+    }
+    btn.disabled = false; btn.textContent = "Start Quiz";
+  }
+
+  function renderSampleQuiz(questions, idx) {
+    const area = document.getElementById("sample-quiz-area");
+    const q = questions[idx];
+    const letters = ["A","B","C","D"];
+    area.innerHTML = `
+      <div class="card" style="max-width:700px;">
+        <div class="quiz-progress"><div class="quiz-progress-bar" style="width:${((idx+1)/questions.length)*100}%"></div></div>
+        <p class="text-muted" style="font-size:0.85rem;">Question ${idx+1} / ${questions.length}</p>
+        <h3 style="margin-bottom:1.25rem;">${q.question}</h3>
+        <div id="sample-options">
+          ${q.options.map((opt, i) => `
+            <div class="quiz-option" onclick="selectSample(${idx}, ${i}, this)">
+              <span class="quiz-letter">${letters[i]}</span>
+              <span>${opt}</span>
+            </div>
+          `).join("")}
+        </div>
+        <div id="explanation-box" style="display:none; margin-top:1rem; padding:1rem; background:#f0f7ff; border-radius:8px;"></div>
+        <div style="display:flex; gap:1rem; margin-top:1.5rem; flex-wrap:wrap;">
+          ${idx > 0 ? `<button class="btn btn-outline" onclick="renderSampleQuiz(sampleQuizData.questions, ${idx-1})">← Previous</button>` : ""}
+          <button class="btn btn-primary" id="sample-next-btn" onclick="nextSample(${idx})" disabled>
+            ${idx < questions.length-1 ? "Next →" : "Finish"}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function selectSample(qIdx, optIdx, el) {
+    sampleAnswers[qIdx] = optIdx;
+    document.querySelectorAll("#sample-options .quiz-option").forEach(o => o.classList.remove("selected"));
+    el.classList.add("selected");
+    document.getElementById("sample-next-btn").disabled = false;
+  }
+
+  function nextSample(idx) {
+    const questions = sampleQuizData.questions;
+    const selected = sampleAnswers[idx];
+    const correct = questions[idx].correct_index;
+    const opts = document.querySelectorAll("#sample-options .quiz-option");
+    opts.forEach((o, i) => {
+      if (i === correct) o.classList.add("correct");
+      else if (i === selected && selected !== correct) o.classList.add("wrong");
+    });
+    const expBox = document.getElementById("explanation-box");
+    expBox.style.display = "block";
+    expBox.innerHTML = `<strong>${selected === correct ? "✅ Correct!" : "❌ Incorrect."}</strong> ${questions[idx].explanation}`;
+
+    setTimeout(() => {
+      if (idx < questions.length - 1) {
+        renderSampleQuiz(questions, idx + 1);
+      } else {
+        const correct_count = Object.keys(sampleAnswers).filter(k => sampleAnswers[k] === questions[k].correct_index).length;
+        document.getElementById("sample-quiz-area").innerHTML = `
+          <div class="card" style="text-align:center; max-width:500px;">
+            <div style="font-size:3rem;">🎯</div>
+            <h2 style="margin:1rem 0;">${Math.round((correct_count/questions.length)*100)}%</h2>
+            <p>You got ${correct_count} / ${questions.length} correct</p>
+            <button class="btn btn-primary mt-2" onclick="startSampleQuiz()">Retry</button>
+          </div>
+        `;
+      }
+    }, 1500);
+  }
+
+  // ── Quiz List ────────────────────────────────────────────────────────────
+  async function loadQuizList() {
+    const quizzes = await DentAI.apiFetch("/api/quiz/list");
+    const c = document.getElementById("quiz-list-container");
+    if (!quizzes.length) { c.innerHTML = '<p class="text-muted text-center">No quizzes available yet. Faculty will upload PDFs to generate quizzes.</p>'; return; }
+    c.innerHTML = `<table class="table"><thead><tr><th>Title</th><th>Topic</th><th>Questions</th><th>Action</th></tr></thead><tbody>
+      ${quizzes.map(q => `<tr>
+        <td>${q.title}</td>
+        <td>${q.topic || "—"}</td>
+        <td>${q.questions.length}</td>
+        <td><a href="/quiz/${q.id}" class="btn btn-primary btn-sm">Take Quiz</a></td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  // ── My Results ───────────────────────────────────────────────────────────
+  async function loadMyResults() {
+    const data = await DentAI.apiFetch("/api/reports/student/my-progress");
+    const c = document.getElementById("results-container");
+    if (!data.history.length) { c.innerHTML = '<p class="text-muted text-center">No quiz attempts yet.</p>'; return; }
+    c.innerHTML = `<table class="table"><thead><tr><th>#</th><th>Score</th><th>Questions</th><th>Time</th><th>Date</th></tr></thead><tbody>
+      ${data.history.map((h, i) => `<tr>
+        <td>${i+1}</td>
+        <td><span class="badge ${h.score>=70?'badge-success':h.score>=50?'badge-warning':'badge-danger'}">${h.score}%</span></td>
+        <td>${h.total_questions}</td>
+        <td>${Math.floor(h.time_taken_sec/60)}m ${h.time_taken_sec%60}s</td>
+        <td>${new Date(h.completed_at).toLocaleDateString()}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  // ── Notes ────────────────────────────────────────────────────────────────
+  function editNote(idx) {
+    const n = window.allNotes[idx];
+    editingNoteId = n.id;
+    document.getElementById("note-title").value = n.title;
+    document.getElementById("note-topic").value = n.topic || "";
+    document.getElementById("note-content").value = n.content;
+    document.getElementById("note-save-btn").textContent = "Update Note";
+    document.getElementById("note-cancel-btn").style.display = "inline-block";
+    // Scroll to form
+    document.querySelector("#page-notes .card").scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    editingNoteId = null;
+    document.getElementById("note-title").value = "";
+    document.getElementById("note-topic").value = "";
+    document.getElementById("note-content").value = "";
+    document.getElementById("note-save-btn").textContent = "Save Note";
+    document.getElementById("note-cancel-btn").style.display = "none";
+  }
+
+  async function saveNote() {
+    const title = document.getElementById("note-title").value.trim();
+    const content = document.getElementById("note-content").value.trim();
+    const topic = document.getElementById("note-topic").value.trim();
+    if (!title || !content) { DentAI.showAlert("note-alert", "Title and content are required.", "danger"); return; }
+    
+    try {
+      if (editingNoteId) {
+        await DentAI.apiFetch(`/api/notes/${editingNoteId}`, {
+          method: "PUT",
+          body: JSON.stringify({ title, content, topic }),
+        });
+        DentAI.showAlert("note-alert", "Note updated!", "success");
+      } else {
+        await DentAI.saveNote(title, content, topic);
+        DentAI.showAlert("note-alert", "Note saved!", "success");
+      }
+      cancelEdit();
+      loadNotes();
+    } catch(e) {
+      DentAI.showAlert("note-alert", "Error: " + e.message, "danger");
+    }
+  }
+
+  async function loadNotes() {
+    const notes = await DentAI.apiFetch("/api/notes/list");
+    const c = document.getElementById("notes-list");
+    if (!notes.length) { c.innerHTML = '<p class="text-muted text-center">No notes yet.</p>'; return; }
+    
+    window.allNotes = notes; // Store globally for easy access
+    
+    c.innerHTML = notes.map((n, i) => `
+      <div style="padding:0.75rem; border-bottom:1px solid #eee; position:relative;" class="note-item">
+        <div style="cursor:pointer;" onclick="viewNote(${i})">
+          <strong>${n.title}</strong>
+          ${n.topic ? `<span class="badge badge-info" style="margin-left:0.5rem;">${n.topic}</span>` : ""}
+          <div class="text-muted" style="font-size:0.8rem; margin-top:0.25rem;">${new Date(n.updated_at).toLocaleDateString()}</div>
+        </div>
+        <div style="position:absolute; right:0.5rem; top:0.5rem; display:flex; gap:0.25rem;">
+          <button class="btn btn-sm" style="color:#1a6fb5; padding:0.25rem 0.5rem;" onclick="editNote(${i})">✏️</button>
+          <button class="btn btn-sm" style="color:#dc3545; padding:0.25rem 0.5rem;" onclick="deleteNote(${n.id})">🗑️</button>
+        </div>
+        <div id="note-content-${i}" style="display:none; margin-top:0.75rem; padding:0.75rem; background:#f8f9fa; border-radius:6px; font-size:0.9rem; white-space:pre-wrap; border-left:3px solid #1a6fb5;"></div>
+      </div>
+    `).join("");
+  }
+
+  function viewNote(idx) {
+    const contentEl = document.getElementById(`note-content-${idx}`);
+    if (contentEl.style.display === "block") {
+      contentEl.style.display = "none";
+    } else {
+      // Hide others
+      document.querySelectorAll("[id^='note-content-']").forEach(el => el.style.display = "none");
+      contentEl.style.display = "block";
+      contentEl.textContent = window.allNotes[idx].content;
+    }
+  }
+
+  async function deleteNote(id) {
+    if (!confirm("Are you sure you want to delete this note?")) return;
+    try {
+      await DentAI.apiFetch(`/api/notes/${id}`, { method: "DELETE" });
+      loadNotes();
+    } catch(e) {
+      alert("Failed to delete note: " + e.message);
+    }
+  }
+
+  // ── Bookmarks ────────────────────────────────────────────────────────────
+  async function addBookmark() {
+    const topic = document.getElementById("bm-topic").value.trim();
+    const desc  = document.getElementById("bm-desc").value.trim();
+    const url   = document.getElementById("bm-url").value.trim();
+    if (!topic) { DentAI.showAlert("bm-alert", "Topic is required.", "danger"); return; }
+    await DentAI.addBookmark(topic, desc, url);
+    DentAI.showAlert("bm-alert", "Bookmarked!", "success");
+    document.getElementById("bm-topic").value = "";
+    loadBookmarks();
+  }
+
+  async function loadBookmarks() {
+    const bms = await DentAI.apiFetch("/api/notes/bookmarks/list");
+    const c = document.getElementById("bookmarks-list");
+    if (!bms.length) { c.innerHTML = '<p class="text-muted text-center">No bookmarks yet.</p>'; return; }
+    c.innerHTML = bms.map(b => `
+      <div style="padding:0.75rem; border-bottom:1px solid #eee;">
+        <strong>${b.topic}</strong>
+        ${b.description ? `<div style="font-size:0.85rem; color:#666;">${b.description}</div>` : ""}
+        ${b.url_or_ref ? `<a href="${b.url_or_ref}" style="font-size:0.8rem;">${b.url_or_ref}</a>` : ""}
+      </div>
+    `).join("");
+  }
+
+  init().catch(console.error);
+</script>
+</body>
+</html>

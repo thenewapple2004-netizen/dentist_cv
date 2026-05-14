@@ -1,0 +1,40 @@
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+jinja2==3.1.4
+python-multipart==0.0.12
+aiofiles==24.1.0
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
+python-dotenv==1.0.1
+
+# AI / LLM
+openai>=1.30.0
+
+# PDF Processing
+pdfplumber==0.11.4
+PyPDF2==3.0.1
+
+# Computer Vision
+opencv-python==4.10.0.84
+numpy==1.26.4
+Pillow==11.0.0
+scikit-learn==1.5.2
+
+# TensorFlow for CV model (CPU version for broad compatibility)
+tensorflow==2.17.0
+
+# HTTP
+httpx==0.27.2
+requests==2.32.3
+
+# Utilities
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-dateutil==2.9.0

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Dashboard — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="dashboard">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h2>🦷 DentAI</h2>
+      <span>Faculty Portal</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Management</div>
+      <a class="nav-item active" data-page="overview"><span class="icon">🏠</span> Overview</a>
+      <a class="nav-item" data-page="upload-pdf"><span class="icon">📄</span> Upload PDF</a>
+      <a class="nav-item" data-page="manage-quiz"><span class="icon">📝</span> Quizzes</a>
+
+      <div class="nav-section">Reports</div>
+      <a class="nav-item" data-page="student-report"><span class="icon">👥</span> Student Performance</a>
+      <a class="nav-item" data-page="quiz-report"><span class="icon">📊</span> Quiz Analytics</a>
+
+      <div class="nav-section">Tools</div>
+      <a class="nav-item" data-page="chatbot"><span class="icon">🤖</span> AI Assistant</a>
+      <a class="nav-item" href="/3d-models"><span class="icon">🦷</span> 3D Dental Models</a>
+      <a class="nav-item" href="/cv-analysis"><span class="icon">🔬</span> CV Analysis</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="user-name">Faculty</span><br>
+      <a href="#" onclick="DentAI.logout()" style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title" id="page-title">Faculty Dashboard</span>
+      <div class="topbar-user">
+        <div class="user-avatar">F</div>
+        <div>
+          <div style="font-weight:600; font-size:0.9rem;" class="user-name">Faculty</div>
+          <div style="font-size:0.75rem; color:#6c757d;">Faculty</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Overview -->
+      <div id="page-overview">
+        <h2 class="section-title">📊 Faculty Dashboard</h2>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" id="stat-students">—</div><div class="stat-label">Total Students</div></div>
+          <div class="stat-card green"><div class="stat-value" id="stat-quizzes">—</div><div class="stat-label">Total Quizzes</div></div>
+          <div class="stat-card teal"><div class="stat-value" id="stat-attempts">—</div><div class="stat-label">Total Attempts</div></div>
+          <div class="stat-card orange"><div class="stat-value" id="stat-avg">—</div><div class="stat-label">Class Avg Score</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">📈 Score Distribution</div>
+            <canvas id="score-chart" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">⚡ Quick Actions</div>
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+              <button class="btn btn-primary" onclick="showPage('upload-pdf')">📄 Upload Study Material</button>
+              <button class="btn btn-secondary" onclick="showPage('manage-quiz')">📝 Manage Quizzes</button>
+              <button class="btn btn-outline" onclick="showPage('student-report')">👥 View Student Reports</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload PDF -->
+      <div id="page-upload-pdf" style="display:none;">
+        <h2 class="section-title">📄 Upload Study Material</h2>
+        <div class="card" style="max-width:600px;">
+          <div id="upload-alert"></div>
+          <div class="form-group">
+            <label class="form-label">Topic / Subject</label>
+            <input type="text" id="pdf-topic" class="form-control" placeholder="e.g. Dental Caries, Periodontitis">
+          </div>
+          <div class="form-group">
+            <label class="form-label">PDF File</label>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('pdf-file').click()">
+              <div class="drop-zone-icon">📄</div>
+              <p>Click to select or drag & drop a PDF file</p>
+              <p style="font-size:0.8rem;">Max 20MB</p>
+              <input type="file" id="pdf-file" accept=".pdf" style="display:none" onchange="onFileSelect(this)">
+            </div>
+          </div>
+          <div id="selected-file" style="display:none; padding:0.75rem; background:#f0f7ff; border-radius:8px; margin-bottom:1rem;"></div>
+          <button class="btn btn-primary" id="upload-btn" onclick="uploadPDF()" disabled data-label="Upload & Extract Text">Upload & Extract Text</button>
+        </div>
+
+        <!-- Generate Quiz from uploaded PDF -->
+        <div id="generate-quiz-section" style="display:none;" class="card mt-3" style="max-width:600px;">
+          <div class="card-title">📝 Generate Quiz from PDF</div>
+          <div id="gen-alert"></div>
+          <div class="form-group">
+            <label class="form-label">Number of Questions</label>
+            <select id="gen-num" class="form-control form-select">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" onclick="generateQuiz()">Generate Quiz with AI</button>
+        </div>
+      </div>
+
+      <!-- Manage Quizzes -->
+      <div id="page-manage-quiz" style="display:none;">
+        <h2 class="section-title">📝 Manage Quizzes</h2>
+        <div id="quiz-table-container"><div class="text-muted text-center">Loading...</div></div>
+      </div>
+
+      <!-- Student Report -->
+      <div id="page-student-report" style="display:none;">
+        <h2 class="section-title">👥 Student Performance Report</h2>
+        <div id="student-table-container"><div class="text-muted text-center">Loading...</div></div>
+      </div>
+
+      <!-- Quiz Report -->
+      <div id="page-quiz-report" style="display:none;">
+        <h2 class="section-title">📊 Quiz Analytics</h2>
+        <div class="form-group" style="max-width:400px;">
+          <label class="form-label">Select Quiz</label>
+          <select id="quiz-select" class="form-control form-select" onchange="loadQuizReport()">
+            <option value="">-- Select a quiz --</option>
+          </select>
+        </div>
+        <div id="quiz-report-container"></div>
+      </div>
+
+      <!-- Chatbot -->
+      <div id="page-chatbot" style="display:none;">
+        <h2 class="section-title">🤖 AI Assistant</h2>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="chat-container">
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" class="form-control" placeholder="Ask about oral pathology, research, teaching methods...">
+              <button id="send-btn" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/chatbot.js"></script>
+<script>
+  const user = DentAI.initPage("faculty");
+  let uploadedPdfId = null;
+
+  function showPage(name) {
+    document.querySelectorAll("[id^='page-']").forEach(el => el.style.display = "none");
+    document.getElementById(`page-${name}`).style.display = "block";
+    document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+    document.querySelector(`[data-page="${name}"]`)?.classList.add("active");
+    const titles = {
+      overview: "Faculty Dashboard", "upload-pdf": "Upload PDF", "manage-quiz": "Manage Quizzes",
+      "student-report": "Student Performance", "quiz-report": "Quiz Analytics", chatbot: "AI Assistant",
+    };
+    document.getElementById("page-title").textContent = titles[name] || name;
+    if (name === "chatbot") Chatbot.init();
+    if (name === "manage-quiz") loadQuizTable();
+    if (name === "student-report") loadStudentReport();
+    if (name === "quiz-report") loadQuizSelectOptions();
+  }
+
+  document.querySelectorAll(".nav-item[data-page]").forEach(el => {
+    el.addEventListener("click", () => showPage(el.dataset.page));
+  });
+
+  async function init() {
+    const stats = await DentAI.apiFetch("/api/reports/faculty/overview");
+    document.getElementById("stat-students").textContent = stats.total_students;
+    document.getElementById("stat-quizzes").textContent = stats.total_quizzes;
+    document.getElementById("stat-attempts").textContent = stats.total_attempts;
+    document.getElementById("stat-avg").textContent = stats.average_score + "%";
+
+    // Score distribution chart placeholder
+    const ctx = document.getElementById("score-chart").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["0-20%","21-40%","41-60%","61-80%","81-100%"],
+        datasets: [{ label: "Students", data: [2,3,8,12,7], backgroundColor: "#1a6fb5" }]
+      },
+      options: { plugins: { legend: { display: false } } }
+    });
+  }
+
+  function onFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById("selected-file").style.display = "block";
+    document.getElementById("selected-file").innerHTML = `📄 <strong>${file.name}</strong> (${(file.size/1024/1024).toFixed(2)} MB)`;
+    document.getElementById("upload-btn").disabled = false;
+  }
+
+  async function uploadPDF() {
+    const file = document.getElementById("pdf-file").files[0];
+    const topic = document.getElementById("pdf-topic").value || "General Oral Pathology";
+    if (!file) return;
+    DentAI.setLoading("upload-btn", true);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("topic", topic);
+    try {
+      const resp = await fetch("/api/pdf/upload", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${DentAI.getToken()}` },
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "Upload failed");
+      uploadedPdfId = data.id;
+      DentAI.showAlert("upload-alert", `✅ PDF uploaded! ${data.text_length} characters extracted.`, "success");
+      document.getElementById("generate-quiz-section").style.display = "block";
+    } catch(e) {
+      DentAI.showAlert("upload-alert", e.message, "danger");
+    }
+    DentAI.setLoading("upload-btn", false);
+    document.getElementById("upload-btn").dataset.label = "Upload & Extract Text";
+  }
+
+  async function generateQuiz() {
+    if (!uploadedPdfId) return;
+    const num = parseInt(document.getElementById("gen-num").value);
+    const topic = document.getElementById("pdf-topic").value || "oral_pathology";
+    DentAI.showAlert("gen-alert", "Generating quiz with AI... this may take a moment.", "info");
+    try {
+      const quiz = await DentAI.apiFetch("/api/quiz/generate", {
+        method: "POST",
+        body: JSON.stringify({ pdf_id: uploadedPdfId, num_questions: num, topic }),
+      });
+      DentAI.showAlert("gen-alert", `✅ Quiz generated: "${quiz.title}" with ${quiz.questions.length} questions.`, "success");
+    } catch(e) {
+      DentAI.showAlert("gen-alert", e.message, "danger");
+    }
+  }
+
+  async function loadQuizTable() {
+    const quizzes = await DentAI.apiFetch("/api/quiz/list");
+    const c = document.getElementById("quiz-table-container");
+    if (!quizzes.length) { c.innerHTML = '<p class="text-muted text-center">No quizzes yet. Upload a PDF to generate one.</p>'; return; }
+    c.innerHTML = `<table class="table"><thead><tr><th>ID</th><th>Title</th><th>Topic</th><th>Questions</th><th>Created</th></tr></thead><tbody>
+      ${quizzes.map(q => `<tr>
+        <td>#${q.id}</td><td>${q.title}</td><td>${q.topic||"—"}</td>
+        <td>${q.questions.length}</td>
+        <td>${new Date(q.created_at).toLocaleDateString()}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  async function loadStudentReport() {
+    const students = await DentAI.apiFetch("/api/reports/faculty/students");
+    const c = document.getElementById("student-table-container");
+    if (!students.length) { c.innerHTML = '<p class="text-muted text-center">No students registered yet.</p>'; return; }
+    c.innerHTML = `<table class="table"><thead><tr><th>Name</th><th>Email</th><th>Attempts</th><th>Avg Score</th><th>Status</th></tr></thead><tbody>
+      ${students.map(s => `<tr>
+        <td>${s.full_name}</td><td>${s.email}</td>
+        <td>${s.total_attempts}</td>
+        <td><span class="badge ${s.average_score>=70?'badge-success':s.average_score>=50?'badge-warning':'badge-danger'}">${s.average_score}%</span></td>
+        <td>${s.average_score>=60?'<span class="badge badge-success">Passing</span>':'<span class="badge badge-danger">Needs Help</span>'}</td>
+      </tr>`).join("")}
+    </tbody></table>`;
+  }
+
+  async function loadQuizSelectOptions() {
+    const quizzes = await DentAI.apiFetch("/api/quiz/list");
+    const sel = document.getElementById("quiz-select");
+    sel.innerHTML = '<option value="">-- Select a quiz --</option>';
+    quizzes.forEach(q => { sel.innerHTML += `<option value="${q.id}">${q.title}</option>`; });
+  }
+
+  async function loadQuizReport() {
+    const qid = document.getElementById("quiz-select").value;
+    if (!qid) return;
+    const data = await DentAI.apiFetch(`/api/reports/faculty/quiz/${qid}`);
+    const c = document.getElementById("quiz-report-container");
+    c.innerHTML = `
+      <div class="stats-grid mt-2">
+        <div class="stat-card"><div class="stat-value">${data.total_attempts}</div><div class="stat-label">Attempts</div></div>
+        <div class="stat-card green"><div class="stat-value">${data.average_score}%</div><div class="stat-label">Average</div></div>
+        <div class="stat-card teal"><div class="stat-value">${data.highest_score}%</div><div class="stat-label">Highest</div></div>
+        <div class="stat-card orange"><div class="stat-value">${data.passing_rate}%</div><div class="stat-label">Pass Rate</div></div>
+      </div>
+    `;
+  }
+
+  init().catch(console.error);
+</script>
+</body>
+</html>

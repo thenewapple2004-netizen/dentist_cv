@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV Analysis — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body style="background:#f0f4f8; min-height:100vh; padding:2rem;">
+
+<div style="max-width:900px; margin:0 auto;">
+  <a href="javascript:history.back()" style="color:#1a6fb5; text-decoration:none; margin-bottom:1.5rem; display:inline-block;">← Back</a>
+
+  <h1 class="section-title">🔬 Dental Image CV Analysis</h1>
+  <p class="text-muted mb-2">Upload a dental image for AI-powered oral pathology condition detection.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Upload Dental Image</div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('img-input').click()">
+          <div class="drop-zone-icon">🦷</div>
+          <p>Click or drag & drop a dental image</p>
+          <p style="font-size:0.8rem; color:#999;">JPG, PNG, BMP, WebP supported</p>
+          <input type="file" id="img-input" accept=".jpg,.jpeg,.png,.bmp,.webp" style="display:none" onchange="onImgSelect(this)">
+        </div>
+        <div id="preview-area" style="display:none; margin-top:1rem; text-align:center;">
+          <img id="preview-img" style="max-width:100%; border-radius:10px; max-height:280px; object-fit:cover;" alt="Preview">
+        </div>
+        <button class="btn btn-primary btn-block mt-2" id="analyze-btn" onclick="analyzeImage()" disabled>
+          Analyze Image
+        </button>
+        <div id="cv-alert" class="mt-2"></div>
+      </div>
+    </div>
+
+    <div>
+      <div id="result-placeholder" class="card" style="text-align:center; color:#999; padding:3rem;">
+        <div style="font-size:3rem;">🔬</div>
+        <p style="margin-top:1rem;">Upload an image to see analysis results</p>
+      </div>
+
+      <div id="result-card" class="card" style="display:none;">
+        <div class="card-title">Analysis Results</div>
+
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem; padding:1rem; border-radius:10px;" id="main-result-box">
+          <div style="font-size:3rem;">🦷</div>
+          <div>
+            <div style="font-weight:700; font-size:1.2rem;" id="result-condition">—</div>
+            <div style="font-size:0.85rem; margin-top:0.25rem;" id="result-confidence">—</div>
+            <span class="badge mt-1" id="result-severity-badge">—</span>
+          </div>
+        </div>
+
+        <p style="font-size:0.9rem; color:#555; margin-bottom:1rem;" id="result-description">—</p>
+
+        <div class="card-title" style="font-size:0.9rem;">Recommendations</div>
+        <ul id="result-recommendations" style="font-size:0.88rem; color:#444; padding-left:1.25rem; line-height:1.8;"></ul>
+
+        <div class="card-title mt-2" style="font-size:0.9rem;">All Condition Probabilities</div>
+        <div id="prob-bars"></div>
+
+        <p style="font-size:0.75rem; color:#999; margin-top:1rem; font-style:italic;" id="disclaimer">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conditions Info -->
+  <div class="card mt-3">
+    <div class="card-title">📚 Oral Pathology Conditions</div>
+    <div id="conditions-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:1rem; margin-top:0.5rem;"></div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  DentAI.requireAuth();
+  let selectedFile = null;
+
+  const dropZone = document.getElementById("drop-zone");
+  dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault(); dropZone.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  function onImgSelect(input) {
+    const file = input.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleFile(file) {
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById("preview-img").src = e.target.result;
+      document.getElementById("preview-area").style.display = "block";
+    };
+    reader.readAsDataURL(file);
+    document.getElementById("analyze-btn").disabled = false;
+  }
+
+  async function analyzeImage() {
+    if (!selectedFile) return;
+    const btn = document.getElementById("analyze-btn");
+    btn.disabled = true; btn.textContent = "Analyzing...";
+    DentAI.showAlert("cv-alert", "Running CV analysis...", "info");
+
+    const form = new FormData();
+    form.append("file", selectedFile);
+    try {
+      const resp = await fetch("/api/cv/analyze", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${DentAI.getToken()}` },
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "Analysis failed");
+      renderResult(data);
+      document.getElementById("cv-alert").innerHTML = "";
+    } catch(e) {
+      DentAI.showAlert("cv-alert", e.message, "danger");
+    }
+    btn.disabled = false; btn.textContent = "Analyze Image";
+  }
+
+  function severityColor(sev) {
+    return { none: "#28a745", moderate: "#ffc107", high: "#fd7e14", urgent: "#dc3545" }[sev] || "#6c757d";
+  }
+
+  function renderResult(data) {
+    document.getElementById("result-placeholder").style.display = "none";
+    document.getElementById("result-card").style.display = "block";
+    const color = severityColor(data.severity);
+
+    document.getElementById("main-result-box").style.background = color + "15";
+    document.getElementById("result-condition").textContent = data.predicted_condition;
+    document.getElementById("result-confidence").textContent = `Confidence: ${data.confidence}%`;
+    document.getElementById("result-severity-badge").textContent = data.severity.toUpperCase();
+    document.getElementById("result-severity-badge").style.background = color + "22";
+    document.getElementById("result-severity-badge").style.color = color;
+    document.getElementById("result-description").textContent = data.description;
+    document.getElementById("disclaimer").textContent = data.disclaimer;
+
+    const recList = document.getElementById("result-recommendations");
+    recList.innerHTML = data.recommendations.map(r => `<li>${r}</li>`).join("");
+
+    const probBars = document.getElementById("prob-bars");
+    probBars.innerHTML = data.all_predictions.map(p => `
+      <div class="result-bar">
+        <span class="result-bar-label">${p.condition}</span>
+        <div class="result-bar-track"><div class="result-bar-fill" style="width:${p.probability}%"></div></div>
+        <span class="result-bar-pct">${p.probability}%</span>
+      </div>
+    `).join("");
+  }
+
+  async function loadConditions() {
+    const conditions = await DentAI.apiFetch("/api/cv/conditions");
+    const grid = document.getElementById("conditions-grid");
+    const icons = { none: "✅", moderate: "⚠️", high: "🔴", urgent: "🚨" };
+    grid.innerHTML = conditions.map(c => `
+      <div class="card" style="padding:1rem; border-left:4px solid ${severityColor(c.severity)};">
+        <div style="font-size:1.5rem;">${icons[c.severity] || "🦷"}</div>
+        <div style="font-weight:600; margin: 0.5rem 0 0.25rem;">${c.name}</div>
+        <div style="font-size:0.8rem; color:#666;">${c.description.substring(0,100)}...</div>
+      </div>
+    `).join("");
+  }
+
+  loadConditions().catch(console.error);
+</script>
+</body>
+</html>

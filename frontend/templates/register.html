@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — DentAI</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div style="font-size:3rem;">🦷</div>
+      <h1>Create Account</h1>
+      <p>Join the DentAI learning platform</p>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <form id="reg-form">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="full_name" class="form-control" placeholder="Dr. Ahmed Khan" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="Min. 6 characters" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select id="role" class="form-control form-select">
+          <option value="student">Student</option>
+          <option value="faculty">Faculty</option>
+        </select>
+      </div>
+      <button type="submit" id="reg-btn" class="btn btn-primary btn-block btn-lg" data-label="Create Account">
+        Create Account
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:1.5rem; font-size:0.9rem; color:#6c757d;">
+      Already have an account? <a href="/login" style="color:#1a6fb5;">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+  document.getElementById("reg-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    DentAI.setLoading("reg-btn", true);
+    try {
+      await DentAI.register(
+        document.getElementById("full_name").value,
+        document.getElementById("email").value,
+        document.getElementById("password").value,
+        document.getElementById("role").value
+      );
+      DentAI.showAlert("alert-box", "Account created! Redirecting to login...", "success");
+      setTimeout(() => window.location.href = "/login", 1500);
+    } catch (err) {
+      DentAI.showAlert("alert-box", err.message, "danger");
+      DentAI.setLoading("reg-btn", false);
+    }
+  });
+</script>
+</body>
+</html>
