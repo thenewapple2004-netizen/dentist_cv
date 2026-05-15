@@ -36,9 +36,9 @@ async def analyze_dental_image(
         analysis_record = CVAnalysisResult(
             user_id=current_user.id,
             image_name=file.filename,
-            condition_detected=result["condition"],
+            condition_detected=result["predicted_condition"],
             confidence=result["confidence"],
-            details=result.get("explanation", ""),
+            details=result.get("description", ""),
         )
         db.add(analysis_record)
         db.commit()
