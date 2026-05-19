@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="dashboard">
 
   <!-- Sidebar -->
@@ -63,7 +64,12 @@
   <!-- Main -->
   <div class="main-content">
     <div class="topbar">
-      <span class="topbar-title" id="page-title">Dashboard</span>
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+        <span class="topbar-title" id="page-title">Dashboard</span>
+      </div>
       <div class="topbar-user">
         <div class="user-avatar">A</div>
         <div>
@@ -234,6 +240,19 @@
 <script src="/static/js/chatbot.js"></script>
 <script src="/static/js/quiz.js"></script>
 <script>
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("open");
+    document.getElementById("sidebar-overlay").classList.toggle("active");
+  }
+  function closeSidebar() {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("sidebar-overlay").classList.remove("active");
+  }
+  // Close sidebar on nav item click (mobile)
+  document.querySelectorAll(".nav-item").forEach(el => {
+    el.addEventListener("click", () => { if (window.innerWidth <= 768) closeSidebar(); });
+  });
+
   const user = DentAI.initPage("student");
   let topics = {};
   let sampleQuizData = null;
@@ -401,14 +420,14 @@
     const quizzes = await DentAI.apiFetch("/api/quiz/list");
     const c = document.getElementById("quiz-list-container");
     if (!quizzes.length) { c.innerHTML = '<p class="text-muted text-center">No quizzes available yet. Faculty will upload PDFs to generate quizzes.</p>'; return; }
-    c.innerHTML = `<table class="table"><thead><tr><th>Title</th><th>Topic</th><th>Questions</th><th>Action</th></tr></thead><tbody>
+    c.innerHTML = `<div class="table-responsive"><table class="table"><thead><tr><th>Title</th><th>Topic</th><th>Questions</th><th>Action</th></tr></thead><tbody>
       ${quizzes.map(q => `<tr>
         <td>${q.title}</td>
         <td>${q.topic || "—"}</td>
         <td>${q.questions.length}</td>
         <td><a href="/quiz/${q.id}" class="btn btn-primary btn-sm">Take Quiz</a></td>
       </tr>`).join("")}
-    </tbody></table>`;
+    </tbody></table></div>`;
   }
 
   // ── My Results ───────────────────────────────────────────────────────────
@@ -416,7 +435,7 @@
     const data = await DentAI.apiFetch("/api/reports/student/my-progress");
     const c = document.getElementById("results-container");
     if (!data.history.length) { c.innerHTML = '<p class="text-muted text-center">No quiz attempts yet.</p>'; return; }
-    c.innerHTML = `<table class="table"><thead><tr><th>#</th><th>Score</th><th>Questions</th><th>Time</th><th>Date</th></tr></thead><tbody>
+    c.innerHTML = `<div class="table-responsive"><table class="table"><thead><tr><th>#</th><th>Score</th><th>Questions</th><th>Time</th><th>Date</th></tr></thead><tbody>
       ${data.history.map((h, i) => `<tr>
         <td>${i+1}</td>
         <td><span class="badge ${h.score>=70?'badge-success':h.score>=50?'badge-warning':'badge-danger'}">${h.score}%</span></td>
@@ -424,7 +443,7 @@
         <td>${Math.floor(h.time_taken_sec/60)}m ${h.time_taken_sec%60}s</td>
         <td>${new Date(h.completed_at).toLocaleDateString()}</td>
       </tr>`).join("")}
-    </tbody></table>`;
+    </tbody></table></div>`;
   }
 
   // ── Notes ────────────────────────────────────────────────────────────────
