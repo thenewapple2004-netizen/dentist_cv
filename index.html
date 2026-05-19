@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DentAI - Oral Pathology Education</title>
+  <style>
+    :root {
+      --primary: #1a6fb5;
+      --secondary: #2ec4b6;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+    .landing {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1d2d44 0%, #1a6fb5 50%, #2ec4b6 100%);
+      color: white;
+    }
+    .landing-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 4rem;
+    }
+    .logo { font-size: 1.5rem; font-weight: 700; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: rgba(255,255,255,0.85); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover { color: white; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-secondary { background: var(--secondary); color: white; }
+    .btn-secondary:hover { filter: brightness(0.9); }
+    .btn-outline { background: transparent; border: 1.5px solid rgba(255,255,255,0.6); color: white; }
+    .btn-outline:hover { background: rgba(255,255,255,0.15); }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+    .btn-lg { padding: 0.85rem 1.75rem; font-size: 1rem; }
+
+    .landing-hero {
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+    }
+    .landing-hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+    }
+    .landing-hero p {
+      font-size: 1.2rem;
+      opacity: 0.85;
+      max-width: 620px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .badge-row {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+    }
+    .badge {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .landing-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      padding: 3rem 4rem;
+      background: rgba(255,255,255,0.05);
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: transform 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-4px); }
+    .feature-card .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .feature-card p  { font-size: 0.9rem; opacity: 0.75; line-height: 1.5; }
+
+    .tech-section {
+      padding: 3rem 4rem;
+      text-align: center;
+    }
+    .tech-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 2rem; opacity: 0.9; }
+    .tech-grid {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tech-chip {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .github-section {
+      padding: 4rem 2rem;
+      text-align: center;
+      background: rgba(0,0,0,0.15);
+    }
+    .github-section h2 { font-size: 2rem; font-weight: 700; margin-bottom: 1rem; }
+    .github-section p { opacity: 0.8; margin-bottom: 2rem; font-size: 1rem; }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      opacity: 0.55;
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    @media (max-width: 768px) {
+      .landing-nav { padding: 1rem 1.5rem; }
+      .landing-hero h1 { font-size: 2rem; }
+      .landing-features { padding: 2rem 1.5rem; }
+      .tech-section { padding: 2rem 1.5rem; }
+      .github-section { padding: 3rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="landing">
+
+  <nav class="landing-nav">
+    <div class="logo">🦷 DentAI</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#tech">Stack</a>
+      <a href="https://github.com/thenewapple2004-netizen/dentist_cv" target="_blank" class="btn btn-secondary btn-sm">View on GitHub</a>
+    </div>
+  </nav>
+
+  <section class="landing-hero">
+    <h1>Interactive Education in<br>Odontogenic Oral Pathology</h1>
+    <p>AI-powered platform for dental students and faculty. Learn, diagnose, and master oral pathology through intelligent quizzes, AR visualization, and real-time AI tutoring.</p>
+    <div class="hero-btns">
+      <a href="https://github.com/thenewapple2004-netizen/dentist_cv" target="_blank" class="btn btn-secondary btn-lg">View Source Code</a>
+      <a href="#features" class="btn btn-outline btn-lg">Explore Features</a>
+    </div>
+    <div class="badge-row">
+      <span class="badge">Python 3.12</span>
+      <span class="badge">FastAPI</span>
+      <span class="badge">Groq AI</span>
+      <span class="badge">SQLite</span>
+      <span class="badge">Computer Vision</span>
+    </div>
+  </section>
+
+  <section id="features" class="landing-features">
+    <div class="feature-card">
+      <div class="icon">🤖</div>
+      <h3>AI Chatbot Tutor</h3>
+      <p>Ask questions about oral pathology and get instant, accurate answers powered by Groq AI.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📊</div>
+      <h3>Smart Quiz Generation</h3>
+      <p>Upload course PDFs and automatically generate custom MCQ quizzes with detailed explanations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔬</div>
+      <h3>CV-Based Diagnosis</h3>
+      <p>Upload dental images for AI-powered oral pathology condition analysis and recommendations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🥽</div>
+      <h3>AR 3D Visualization</h3>
+      <p>Explore dental anatomy and pathological conditions through augmented reality models.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📈</div>
+      <h3>Performance Reports</h3>
+      <p>Faculty get detailed analytics on student performance, quiz scores, and learning progress.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📌</div>
+      <h3>Notes & Bookmarks</h3>
+      <p>Save important topics, add personal notes, and build your own study library.</p>
+    </div>
+  </section>
+
+  <section id="tech" class="tech-section">
+    <h2>Built With</h2>
+    <div class="tech-grid">
+      <span class="tech-chip">FastAPI</span>
+      <span class="tech-chip">Python 3.12</span>
+      <span class="tech-chip">Groq LLM API</span>
+      <span class="tech-chip">SQLite + SQLAlchemy</span>
+      <span class="tech-chip">JWT Auth</span>
+      <span class="tech-chip">OpenCV / Computer Vision</span>
+      <span class="tech-chip">Jinja2 Templates</span>
+      <span class="tech-chip">Uvicorn</span>
+    </div>
+  </section>
+
+  <section class="github-section">
+    <h2>Open Source</h2>
+    <p>Full source code available on GitHub — clone it, run it locally, or deploy it on Render / Railway.</p>
+    <a href="https://github.com/thenewapple2004-netizen/dentist_cv" target="_blank" class="btn btn-secondary btn-lg">
+      &#128279; github.com/thenewapple2004-netizen/dentist_cv
+    </a>
+  </section>
+
+  <div class="footer">
+    &copy; 2025 DentAI &mdash; Bahria University, Lahore Campus &nbsp;|&nbsp; Computer Vision Assignment &nbsp;|&nbsp; Arslan Amjad
+  </div>
+
+</div>
+</body>
+</html>
