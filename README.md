@@ -5,6 +5,92 @@ BSCS 8th Semester | CLO2: AI-based image analysis for computer vision problems
 
 ---
 
+## Prompts Used to Build This Project (with Claude AI)
+
+This project was built using Claude Code (AI assistant). Below are the prompts used — in order — to generate the full application.
+
+---
+
+### Prompt 1 — Project Initialization
+
+> "I have a Computer Vision assignment for BSCS 8th semester at Bahria University. I need to build an interactive educational application on Odontogenic Oral Pathology. The app needs: student and faculty login roles, PDF upload by faculty, AI-based quiz generation from PDFs, sample quizzes for students, AR/3D viewer for dental models, a chatbot for oral pathology Q&A, computer vision image analysis for dental conditions, student progress tracking, notes and bookmarks, and performance reports for faculty. Use FastAPI for backend, SQLite for database, and vanilla JS with Jinja2 for frontend. Make it a full-stack deployable web app."
+
+---
+
+### Prompt 2 — Authentication System
+
+> "Set up JWT authentication with two roles: student and faculty. Use bcrypt for password hashing. Students and faculty should have separate dashboards after login. Include a register page where users can choose their role."
+
+---
+
+### Prompt 3 — Computer Vision Model
+
+> "Add a dental image classifier using MobileNetV2 (transfer learning). It should classify uploaded dental images into: Healthy Teeth, Dental Caries, Periodontitis, Dental Abscess, and Oral Lesion. Include confidence scores and condition descriptions in the response. Add a fallback color/texture heuristic if no trained weights are available."
+
+---
+
+### Prompt 4 — AI Chatbot (DentAI Tutor)
+
+> "Integrate the Anthropic Claude API to create a chatbot called DentAI Tutor. It should answer questions specifically about oral pathology and dental conditions. Use claude-haiku for speed. Include a fallback response if the API key is not set."
+
+---
+
+### Prompt 5 — PDF Upload and AI Quiz Generation
+
+> "Add a PDF upload feature for faculty. Use pdfplumber to extract text from uploaded PDFs. Then add a quiz generation endpoint that sends the extracted text to Claude API (claude-opus for quality) and returns MCQ questions with options and correct answers. Store generated quizzes in the database."
+
+---
+
+### Prompt 6 — Sample Quizzes
+
+> "Add pre-built sample quizzes that don't require a PDF upload. Include quizzes on Dental Caries and Periodontitis fundamentals. Students should be able to pick a topic, take the quiz, get instant per-question feedback, and see their final score."
+
+---
+
+### Prompt 7 — Student Dashboard
+
+> "Build a full student dashboard with: quiz attempt history, average score, a Chart.js progress chart over time, topic grid showing available subjects, notes section to save personal study notes with topic tags, and a bookmarks system. All data should be user-specific and loaded via API."
+
+---
+
+### Prompt 8 — Faculty Dashboard
+
+> "Build a faculty dashboard showing: total student count, total quizzes, total attempts, class average score (with a Chart.js bar chart), a table of all students with their attempt count and average score and pass/fail status, quiz analytics (select a quiz to see attempts, average, highest, lowest score, pass rate), and a PDF management section."
+
+---
+
+### Prompt 9 — 3D AR Viewer
+
+> "Add a Three.js interactive 3D dental model viewer. Include models for: healthy tooth, dental caries, abscess, periodontitis, and dental crown. Users should be able to rotate, zoom, and toggle wireframe mode. Add an AR marker detection option. Make it work entirely in the browser with no external dependencies."
+
+---
+
+### Prompt 10 — Database Seeder and Demo Accounts
+
+> "Create a database initialization script (scripts/init_db.py) that seeds: a demo student account (student@demo.com / demo1234), a demo faculty account (faculty@demo.com / demo1234), and 2 pre-built quizzes on Dental Caries and Periodontitis."
+
+---
+
+### Prompt 11 — API Tests
+
+> "Write pytest tests covering: user registration, login, getting quiz topics, submitting a sample quiz, accessing the chatbot endpoint, uploading an image for CV analysis, and checking the student progress report. All 7 tests should pass."
+
+---
+
+### Prompt 12 — Bug Fix (JWT and bcrypt)
+
+> "The login is failing. Fix the JWT token — the `sub` field must be a string (python-jose requirement), so convert the user ID to string when creating the token and convert back to int when reading it in deps.py. Also fix bcrypt — replace passlib with direct bcrypt calls because passlib has a version incompatibility with Python 3.12."
+
+---
+
+### Prompt 13 — Final README and Documentation
+
+> "Write a complete README.md covering: what the project does, full project structure with explanations, manual setup steps (env file, venv, init_db), how to run, all page URLs, full feature walkthrough for both student and faculty, CV model details, all API endpoints, tech stack table, troubleshooting table, and assignment requirement coverage checklist."
+
+---
+
+---
+
 ## What This Project Does
 
 A full-stack, AI-powered web application for dental education covering:
@@ -79,7 +165,44 @@ dentist_cv/
 
 ---
 
-## What You Need to Do Manually
+## Deploy to Render.com (Free — Full App, No GitHub Pages Limit)
+
+GitHub Pages only hosts static files — it cannot run the FastAPI backend, database, or AI models.  
+**Render.com** hosts the full app for free.
+
+### Steps
+
+**1. Push your code to GitHub**
+```bash
+git add .
+git commit -m "add render deployment config"
+git push origin main
+```
+
+**2. Create a free Render account**  
+Go to [render.com](https://render.com) and sign up (free, no credit card needed for web services).
+
+**3. Create a new Web Service**
+- Click **New → Web Service**
+- Connect your GitHub account and select this repository
+- Render will auto-detect `render.yaml` and fill in all settings
+
+**4. Set your Groq API key** (for chatbot + quiz generation)
+- In the Render dashboard → your service → **Environment**
+- Add: `GROQ_API_KEY` = your key from [console.groq.com](https://console.groq.com) (free)
+- `SECRET_KEY` is auto-generated by Render — no action needed
+
+**5. Click Deploy**  
+Render will install dependencies and start the server. First deploy takes ~5 minutes.  
+Your app will be live at: `https://dentai.onrender.com` (or similar URL Render assigns).
+
+> **Note:** The free tier spins down after 15 minutes of inactivity. First request after sleep takes ~30 seconds to wake up. This is normal for free hosting.
+
+> **SQLite note:** The database resets on each redeploy. Demo accounts (student@demo.com / faculty@demo.com) are re-seeded automatically by the start command.
+
+---
+
+## What You Need to Do Manually (Local Setup)
 
 ### 1. Copy the `.env` file
 ```bash

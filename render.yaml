@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: dentai
+    runtime: python
+    pythonVersion: "3.12"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scripts/init_db.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///./dentist_cv.db
+      - key: UPLOAD_DIR
+        value: data/uploads
+      - key: MAX_FILE_SIZE_MB
+        value: 20
+      - key: CV_MODEL_PATH
+        value: cv/saved_model
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.6"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
